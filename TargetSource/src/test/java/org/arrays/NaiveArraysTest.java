@@ -7,10 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class NaiveArraysTest {
 
     int [] test_arr = {1,2,3,4,5,6,7,8,9,10};
-    @Test
-    void find_max() {
-        assertEquals(10, NaiveArrays.find_max(test_arr));
-    }
 
     @Test
     void sum_elements() {

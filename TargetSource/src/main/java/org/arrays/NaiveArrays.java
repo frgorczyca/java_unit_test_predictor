@@ -1,17 +1,6 @@
 package org.arrays;
 
 public class NaiveArrays {
-    public static int find_max(int [] arr) {
-        int max = 0;
-
-        for (int j : arr) {
-            if (j > max) {
-                max = j;
-            }
-        }
-
-        return max;
-    }
 
     public static int sum_elements(int [] arr) {
         int sum = 0;
