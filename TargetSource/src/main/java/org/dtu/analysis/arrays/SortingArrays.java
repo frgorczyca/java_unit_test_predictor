@@ -1,4 +1,4 @@
-package org.arrays;
+package org.dtu.analysis.arrays;
 
 public class SortingArrays {
     public static int find_max(int [] arr) {

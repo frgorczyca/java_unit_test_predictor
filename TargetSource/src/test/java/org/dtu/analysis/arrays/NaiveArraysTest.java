@@ -1,5 +1,6 @@
-package org.arrays;
+package org.dtu.analysis.arrays;
 
+import org.dtu.analysis.arrays.NaiveArrays;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

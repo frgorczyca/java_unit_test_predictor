@@ -1,4 +1,4 @@
-package org.example;
+package org.dtu.analysis.example;
 
 public class Main {
     public static void main(String[] args) {

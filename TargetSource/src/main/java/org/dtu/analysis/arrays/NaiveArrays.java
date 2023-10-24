@@ -1,4 +1,4 @@
-package org.arrays;
+package org.dtu.analysis.arrays;
 
 public class NaiveArrays {
 
