@@ -1,5 +1,7 @@
 package org.dtu.analysis.arrays;
 
+// This might be considered as modification
+
 public class NaiveArrays {
 
     public static int sum_elements(int [] arr) {
