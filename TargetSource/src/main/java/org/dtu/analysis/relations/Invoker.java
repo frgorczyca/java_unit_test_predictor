@@ -5,6 +5,11 @@ public class Invoker {
     public String label = "default";
     public int number = 0;
 
+    public void Reset() {
+        label = "default";
+        number = 0;
+    };
+
     public void InvokeBasic(Basic b){
         number = b.GetId();
     }
@@ -15,7 +20,7 @@ public class Invoker {
     }
 
     public void InvokeOffspring(Offspring off){
-        number = off.GetId();
+        number = off.GetOffsetId();
     }
 
     public void InvokeOverrider(Overrider ov){
