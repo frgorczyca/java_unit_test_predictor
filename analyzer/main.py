@@ -1,39 +1,40 @@
 import os
-import datetime
-import glob
 import csv
 import re
 
-def lookForFiles(dir, extension, expr) :
+
+def look_for_files(directory, extension, expr):
     matching = []
-    for root, dirs, files in os.walk(dir):
-            for file in files:
-                if file.endswith(extension) and expr != "" :
-                    res = re.search(expr, file)
-                    if res.group() != "":
-                        matching.append(os.path.join(root, file))
-                elif file.endswith(extension) and expr == "" :
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(extension) and expr != "":
+                res = re.search(expr, file)
+                if res.group() != "":
                     matching.append(os.path.join(root, file))
+            elif file.endswith(extension) and expr == "":
+                matching.append(os.path.join(root, file))
 
     return matching
 
-class TestSet :
 
+class TestSet:
     tests = {}
     changed_tests = {}
 
-    def checkIfDirExists() :
+    @staticmethod
+    def check_if_dir_exists():
         path = os.path.join(os.getcwd(), "analyzer", "data")
         return os.path.exists(path)
 
-    def initTestData() :
-        res_tests = lookForFiles(".", ".java", "^.*Test.*$||^.*TEST.*$||^.*test.*$")
-        res_src = lookForFiles(".", ".java", "")
+    @staticmethod
+    def init_test_data():
+        res_tests = look_for_files(".", ".java", "^.*Test.*$||^.*TEST.*$||^.*test.*$")
+        res_src = look_for_files(".", ".java", "")
 
         # for test in res_tests :
         #     print(test)
 
-        if (len(res_src) == 0 and len(res_src) == 0) :
+        if len(res_src) == 0 and len(res_src) == 0:
             print("No tests neither sources were found!")
             return
 
@@ -50,7 +51,7 @@ class TestSet :
             fields = ["File", "LastModTime"]
             writer.writerow(fields)
 
-            for test in res_tests :
+            for test in res_tests:
                 modify_time = os.path.getmtime(test)
                 writer.writerow([test, modify_time])
 
@@ -66,9 +67,8 @@ class TestSet :
                 writer.writerow([src, modify_time])
 
 
-if __name__ == "__main__" :
-    test_set = TestSet
+if __name__ == "__main__":
 
-    if (not test_set.checkIfDirExists()) :
+    if not TestSet.check_if_dir_exists():
         print("Init")
-        test_set.initTestData()
+        TestSet.init_test_data()
