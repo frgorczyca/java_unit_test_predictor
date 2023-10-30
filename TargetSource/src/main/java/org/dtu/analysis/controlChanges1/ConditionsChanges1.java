@@ -1,4 +1,4 @@
-package org.dtu.analysis.control;
+package org.dtu.analysis.controlChanges1;
 
 public class ConditionsChanges1 {
 

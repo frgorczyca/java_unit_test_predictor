@@ -1,11 +1,12 @@
-package org.dtu.analysis.control;
+package org.dtu.analysis.controlChanges1;
 
-public class LoopsChanges4 {
+public class LoopsChanges1 {
 
-    // No changes
+    // Change start value to 1
+    // Should rerun all tests
     public static int stopAtPoint(int a) {
         int b = 0;
-        for (int i = 0; i < a; i++) {
+        for (int i = 1; i < a; i++) {
             if (i > 5) {
                 break;
             }
@@ -14,12 +15,11 @@ public class LoopsChanges4 {
         return b;
     }
 
-    // Add more logic in outer loop
-    // Should rerun tests where a > 0
+    // Change counter start value to 1
+    // Should rerun all tests
     public static int innerLoop(int a) {
-        int c = 0;
+        int c = 1;
         for (int i = 0; i < a; i++) {
-            c += 1;
             for (int j = 9; j < a; j++) {
                 c += 1;
             }

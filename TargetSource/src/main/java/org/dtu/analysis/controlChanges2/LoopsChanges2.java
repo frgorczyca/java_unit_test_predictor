@@ -1,4 +1,4 @@
-package org.dtu.analysis.control;
+package org.dtu.analysis.controlChanges2;
 
 public class LoopsChanges2 {
 
