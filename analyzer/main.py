@@ -1,7 +1,7 @@
 import os
 import csv
 import re
-
+import shutil
 
 def look_for_files(directory, extension, expr):
     matching = []
@@ -40,7 +40,10 @@ class TestSet:
 
         # Create test-data directory
         path = os.path.join(os.getcwd(), "analyzer", "data")
+        f_path = os.path.join(path, "olds")
+
         os.mkdir(path)
+        os.mkdir(f_path)
 
         # Create src and tests csv files
         f_srcs = os.path.join(path, "srcs.csv")
@@ -63,8 +66,9 @@ class TestSet:
             for src in res_src:
                 if "test" in src or "TEST" in src or "Test" in src:
                     continue
-                modify_time = os.path.getatime(src)
+                modify_time = os.path.getmtime(src)
                 writer.writerow([src, modify_time])
+                shutil.copy2(src, f_path)
 
 
 if __name__ == "__main__":
