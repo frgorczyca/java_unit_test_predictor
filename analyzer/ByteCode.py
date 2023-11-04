@@ -47,8 +47,8 @@ class ByteCodeAnalyzer():
         def format_test_name(reg):
             return re.split("\s+",reg)[2]
 
-        rg = r"@Test\n\s*void " + name + r"\w+"
-        tests_to_run = list(map(format_test_name,re.findall(rg, tests)))
+        rg = r"@Test\n\s*void " + name[:-1] + r"\w+"
+        tests_to_run = re.findall(rg, tests)
         return tests_to_run
 
 
