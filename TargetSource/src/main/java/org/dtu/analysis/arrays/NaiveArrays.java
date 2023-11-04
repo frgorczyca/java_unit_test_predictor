@@ -4,6 +4,8 @@ package org.dtu.analysis.arrays;
 
 public class NaiveArrays {
 
+    int a = 11;
+
     public static int sum_elements(int [] arr) {
         int sum = 0;
 
