@@ -1,8 +1,9 @@
 from ProjectManager import *
 from ByteCode import *
+from SyntaxAnalyzer import *
 
 use_bytecode = 1
-use_syntax = 1
+use_syntax = 0
 
 if __name__ == "__main__":
 
@@ -43,5 +44,14 @@ if __name__ == "__main__":
                         print("For file test: ", test, ", consider reruning: ")
                         for rer in rerun :
                             print(rer)
+                print("")
+            
+            if (use_syntax) :
+                print("Doing plain syntax analyzis...")
+                test_files = Manager.getKnownTests()
+                dict = Syntax.ParseTests(test_files)
+                
+                # Save generated dict
+                Manager.saveTestsDep(dict, Manager.path_data)
 
             # Manager.getDiff(file, name)

@@ -172,3 +172,10 @@ class Manager:
             for row in reader :
                 files.append(row['File'])
         return files
+    
+    @staticmethod
+    def saveTestsDep(dict, path) :
+        path = os.path.join(path, "test_dep.json")
+
+        with open(path, "w") as json_file:
+            json.dump(dict, json_file)
