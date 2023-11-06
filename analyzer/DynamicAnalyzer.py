@@ -78,11 +78,6 @@ class Operation:
         self.class_: str = json_doc["class"] if "class" in json_doc else None
         self.method: Dict[str, Any] = json_doc["method"] if "method" in json_doc else None
 
-    def get_name(self):
-        if self.operant:
-            return f"{self.opr}-{self.operant}"
-        return self.opr
-
 class Interpreter:
     def __init__(self, java_classes: Dict[str,JavaClass], java_class, method_name, method_args: List[Value], memory: Dict[str, Value] = {}):
         self.memory: Dict[str, Value] = memory
@@ -104,12 +99,12 @@ class Interpreter:
             self.trace.append(element.counter)
             java_class = self.get_class(element.counter.class_name, element.counter.method_name)
             operation = Operation(java_class.get_method(element.counter.method_name)["code"]["bytecode"][element.counter.counter])
-            if operation.get_name() == "return":
+            if operation.opr == "return":
                 return perform_return(self, operation, element)
             self.run_operation(operation, element)
 
     def run_operation(self, operation: Operation, element: StackElement):
-        method = method_mapper[operation.get_name()]
+        method = method_mapper[operation.opr]
         method(self, operation, element)
 
 def perform_return(runner: Interpreter, opr: Operation, element: StackElement):
@@ -127,16 +122,19 @@ def perform_load(runner: Interpreter, opr: Operation, element: StackElement):
     value = element.local_variables[opr.index]
     runner.stack.append(StackElement(element.local_variables, element.operational_stack + [value], element.counter.next_counter()))
 
-def perform_add(runner: Interpreter, opr: Operation, element: StackElement):
-    second = element.operational_stack.pop().value
-    first = element.operational_stack.pop().value
-    result = Value(first + second)
-    runner.stack.append(StackElement(element.local_variables, element.operational_stack + [result], element.counter.next_counter()))
+def get_binary(opr: Operation):
+      # name must match Python op names
+    operations = {
+        "add": "__add__",
+        "sub": "__sub__",
+        "mul": "__mul__"
+    }
+    return operations[opr.operant]
 
-def perform_sub(runner: Interpreter, opr: Operation, element: StackElement):
+def perform_binary(runner: Interpreter, opr: Operation, element: StackElement):
     second = element.operational_stack.pop().value
     first = element.operational_stack.pop().value
-    result = Value(first - second)
+    result = Value(getattr(first, get_binary(opr))(second))
     runner.stack.append(StackElement(element.local_variables, element.operational_stack + [result], element.counter.next_counter()))
 
 def get_comparison(opr: Operation):
@@ -183,12 +181,6 @@ def perform_increment(runner: Interpreter, opr: Operation, element: StackElement
     value = element.local_variables[opr.index].value
     local_vars[opr.index] = Value(value + opr.amount)
     runner.stack.append(StackElement(local_vars, element.operational_stack, element.counter.next_counter()))
-
-def perform_multiplication(runner: Interpreter, opr: Operation, element: StackElement):
-    second = element.operational_stack.pop().value
-    first = element.operational_stack.pop().value
-    result = Value(first * second)
-    runner.stack.append(StackElement(element.local_variables, element.operational_stack + [result], element.counter.next_counter()))
 
 def perform_goto(runner: Interpreter, opr: Operation, element: StackElement):
     next_counter = Counter(element.counter.method_name, opr.target)
@@ -268,9 +260,7 @@ method_mapper = {
     "push": perform_push,
     "return": perform_return,
     "load": perform_load,
-    "binary-add": perform_add,
-    "binary-sub": perform_sub,
-    "binary-mul": perform_multiplication,
+    "binary": perform_binary,
     "if": perform_compare,
     "store": perform_store,
     "ifz": perform_compare_zero,
@@ -312,7 +302,6 @@ if __name__ == "__main__":
         test_file = json.load(fp)
         test_class = JavaClass(json_dict=test_file)
 
-    a = test_class.get_methods()
     tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
     traces: Dict[str, List[Counter]] = {}
     for test in tests:
