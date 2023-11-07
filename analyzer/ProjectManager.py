@@ -8,7 +8,20 @@ import json
 
 data_old_src = "olds-src"
 bytecode_path_name = "bytecode"
-jvm2json_path = os.path.join(os.getcwd(), "jvm2json", "9.2.8", "bin", "jvm2json")
+JVM2JSON_PATH = os.path.join(os.getcwd(), "jvm2json", "9.2.8", "bin", "jvm2json")
+
+
+def test_jvm2json() -> str:
+    try:
+        result = subprocess.run(["jvm2json", "-h"], capture_output=True)
+        if result.returncode == 0:
+            return "jvm2json"
+        result = subprocess.run([JVM2JSON_PATH, "-h"], capture_output=True)
+        if result.returncode == 0:
+            return JVM2JSON_PATH
+    except Exception:
+        raise Exception(f"jvm2json not found on $PATH or {JVM2JSON_PATH}")
+
 
 class Manager:
     path_data = os.path.join(os.getcwd(), "analyzer", "data")
@@ -22,6 +35,10 @@ class Manager:
 
     # Change to False if you dont want to run jvm2json automatically
     use_jvm2json = True
+
+    if use_jvm2json:
+        jvm2json_path = test_jvm2json()
+
 
     @staticmethod
     def check_if_dir_exists():
@@ -149,7 +166,9 @@ class Manager:
             base_name = base_name.split(".")[0] + ".json"
             file = os.path.join(dest, base_name)
             print(cl)
-            subprocess.run([jvm2json_path, "-s", cl, "-t", file])
+            result = subprocess.run([Manager.jvm2json_path, "-s", cl, "-t", file])
+            if result.returncode != 0:
+                raise Exception(f"jvm2json failed.\n\nSTDERR:\n{result.stderr}\n\nSTDOUT:\n{result.stdout}")
         # subprocess.run([jvm2json_path, "-h"])
     
     @staticmethod
@@ -161,7 +180,7 @@ class Manager:
             else :
                 f_name = os.path.basename(file).split(".")[0] + ".json"
                 path = os.path.join(dest, f_name)
-                subprocess.run([jvm2json_path, "-s", file, "-t", path])
+                subprocess.run([Manager.jvm2json_path, "-s", file, "-t", path])
 
     @staticmethod
     def getKnownTests() :
