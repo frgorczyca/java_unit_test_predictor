@@ -188,7 +188,7 @@ def main():
     from pathlib import Path
     from tree_sitter.binding import Tree, Node
     from tree_sitter import Language, Parser
-    from analyzer.dependency_graphs.util import print_tree, JAVA_LANGUAGE, parse_tree
+    from analyzer.dependency_graphs.bounds import print_tree, JAVA_LANGUAGE, parse_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
     source_path = Path("TargetSource/src/main/java/org/dtu/analysis/vector/Scene.java")
 
