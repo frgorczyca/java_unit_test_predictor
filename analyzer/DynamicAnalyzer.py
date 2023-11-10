@@ -83,7 +83,7 @@ class Interpreter:
         self.memory: Dict[str, Value] = memory
         self.stack: List[StackElement] = [StackElement(method_args, [], Counter(java_class, method_name, 0))]
         self.java_classes = java_classes
-        self.trace = []
+        self.trace: List[Counter] = []
 
     def get_class(self, class_name, method_name) -> JavaClass:
         if class_name in self.java_classes.keys():
