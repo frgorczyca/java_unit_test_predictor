@@ -99,7 +99,7 @@ class Interpreter:
             if "Test" not in element.counter.class_name and "junit" not in element.counter.class_name:
                 self.trace.append(element.counter)
             java_class = self.get_class(element.counter.class_name, element.counter.method_name)
-            operation = Operation(java_class.get_method(element.counter.method_name)["code"]["bytecode"][element.counter.counter])
+            operation = get_operation(java_class, element.counter)
             if operation.opr == "return":
                 return perform_return(self, operation, element)
             self.run_operation(operation, element)
@@ -107,6 +107,9 @@ class Interpreter:
     def run_operation(self, operation: Operation, element: StackElement):
         method = method_mapper[operation.opr]
         method(self, operation, element)
+
+def get_operation(java_class: JavaClass, counter: Counter):
+    return Operation(java_class.get_method(counter.method_name)["code"]["bytecode"][counter.counter])
 
 def perform_return(runner: Interpreter, opr: Operation, element: StackElement):
     type = opr.type
@@ -316,6 +319,38 @@ def line_by_line_compare(original_class: JavaClass, change_class: JavaClass, tes
                             tests_to_run.add(test_name)
     return sorted(tests_to_run)
 
+def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
+    traces: Dict[str, List[Counter]] = {}
+    for test in tests:
+        test_name = test["name"]
+        interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
+        interpreter.run()
+        traces[test_name] = interpreter.trace
+
+    original_methods = { x["name"]: x for x in original_class.get_methods() }
+    changed_methods = { x["name"]: x for x in change_class.get_methods() }
+    tests_to_run = set()
+    for test_name, trace in traces.items():
+        original_idx = 0
+        changed_idx = 0
+        while original_idx < len(trace):
+            original_step = original_methods[trace[original_idx].method_name]["code"]["bytecode"][trace[original_idx].counter]
+            changed_step = changed_methods[trace[changed_idx].method_name]["code"]["bytecode"][trace[changed_idx].counter]
+            if original_step["opr"] == "goto":
+                original_idx += 1
+                continue
+            if changed_step["opr"] == "goto":
+                changed_idx += changed_step["target"]
+                continue
+            original_step["offset"] = "ignore"
+            changed_step["offset"] = "ignore"
+            if original_step != changed_step:
+                tests_to_run.add(test_name)
+                break
+            else:
+                original_idx += 1
+                changed_idx += 1
+    return sorted(tests_to_run)
 
 def get_tests(old, new, tests):
     with open(old, "r") as fp:
@@ -329,7 +364,8 @@ def get_tests(old, new, tests):
         test_class = JavaClass(json_dict=test_file)
 
     tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
-    return line_by_line_compare(original_class, change_class, test_class, tests)
+    # return line_by_line_compare(original_class, change_class, test_class, tests)
+    return sequence_compare(original_class, change_class, test_class, tests)
 
 if __name__ == "__main__":
     print(get_tests(
