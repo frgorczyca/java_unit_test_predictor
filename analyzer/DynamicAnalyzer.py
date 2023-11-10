@@ -313,6 +313,14 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
             args.append(Value(arg, type_name))
     return args, _memory
 
+def create_method_dict(java_class: JavaClass):
+    methods_without_offset = {}
+    for method in java_class.get_methods():
+        for line in method["code"]["bytecode"]:
+            line["offset"] = "ignore"
+        methods_without_offset[method["name"]] = method
+    return methods_without_offset
+
 def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
     traces: Dict[str, List[TraceStep]] = {}
     for test in tests:
@@ -321,8 +329,8 @@ def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_cl
         interpreter.run()
         traces[test_name] = interpreter.trace
 
-    original_methods = { x["name"]: x for x in original_class.get_methods() }
-    changed_methods = { x["name"]: x for x in change_class.get_methods() }
+    original_methods = create_method_dict(original_class)
+    changed_methods = create_method_dict(change_class)
     tests_to_run = set()
     for test_name, trace in traces.items():
         original_idx = 0
@@ -337,8 +345,6 @@ def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_cl
             if changed_step["opr"] == "goto":
                 changed_idx = changed_step["target"]
                 continue
-            original_step["offset"] = "ignore"
-            changed_step["offset"] = "ignore"
             if original_step["opr"] in ["if", "ifz"] and changed_step["opr"] in ["if", "ifz"]:
                 changed_eval = getattr(trace[original_idx].left_value, get_comparison(changed_step["condition"]))(trace[original_idx].right_value) 
                 if changed_eval:
