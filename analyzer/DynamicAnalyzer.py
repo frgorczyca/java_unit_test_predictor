@@ -291,14 +291,14 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
             args.append(Value(arg, type_name))
     return args, _memory
 
-if __name__ == "__main__":
-    with open("TargetSource/target/classes/org/dtu/analysis/control/Conditions.json", "r") as fp:
+def get_tests(old, new, tests):
+    with open(old, "r") as fp:
         original_file = json.load(fp)
         original_class = JavaClass(json_dict=original_file)
-    with open("TargetSource/target/classes/org/dtu/analysis/controlChanges1/ConditionalChanges1.json", "r") as fp:
+    with open(new, "r") as fp:
         change_file = json.load(fp)
         change_class = JavaClass(json_dict=change_file)
-    with open("TargetSource/target/test-classes/org/dtu/analysis/control/ControlFlowTests.json", "r") as fp:
+    with open(tests, "r") as fp:
         test_file = json.load(fp)
         test_class = JavaClass(json_dict=test_file)
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
     traces: Dict[str, List[Counter]] = {}
     for test in tests:
         test_name = test["name"]
-        interpreter = Interpreter({"org/dtu/analysis/control/Conditions": original_class, "org/dtu/analysis/control/ControlFlowTests": test_class}, "org/dtu/analysis/control/ControlFlowTests", test_name, [], {})
+        interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
         interpreter.run()
         traces[test_name] = interpreter.trace
     
@@ -324,5 +324,10 @@ if __name__ == "__main__":
                     for step in trace:
                         if step.class_name == original_class.name and step.method_name == method_name and step.counter == i:
                             tests_to_run.add(test_name)
-    print(sorted(tests_to_run))
-                
+    return sorted(tests_to_run)
+
+if __name__ == "__main__":
+    print(get_tests(
+        "TargetSource/target/classes/org/dtu/analysis/control/Conditions.json",
+        "TargetSource/target/classes/org/dtu/analysis/controlChanges2/ConditionalChanges2.json",
+        "TargetSource/target/test-classes/org/dtu/analysis/control/ControlFlowTests.json"))
