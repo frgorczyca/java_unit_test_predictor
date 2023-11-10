@@ -291,25 +291,14 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
             args.append(Value(arg, type_name))
     return args, _memory
 
-def get_tests(old, new, tests):
-    with open(old, "r") as fp:
-        original_file = json.load(fp)
-        original_class = JavaClass(json_dict=original_file)
-    with open(new, "r") as fp:
-        change_file = json.load(fp)
-        change_class = JavaClass(json_dict=change_file)
-    with open(tests, "r") as fp:
-        test_file = json.load(fp)
-        test_class = JavaClass(json_dict=test_file)
-
-    tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
+def line_by_line_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
     traces: Dict[str, List[Counter]] = {}
     for test in tests:
         test_name = test["name"]
         interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
         interpreter.run()
         traces[test_name] = interpreter.trace
-    
+
     original_methods = { x["name"]: x for x in original_class.get_methods() }
     changed_methods = { x["name"]: x for x in change_class.get_methods() }
     tests_to_run = set()
@@ -325,6 +314,21 @@ def get_tests(old, new, tests):
                         if step.class_name == original_class.name and step.method_name == method_name and step.counter == i:
                             tests_to_run.add(test_name)
     return sorted(tests_to_run)
+
+
+def get_tests(old, new, tests):
+    with open(old, "r") as fp:
+        original_file = json.load(fp)
+        original_class = JavaClass(json_dict=original_file)
+    with open(new, "r") as fp:
+        change_file = json.load(fp)
+        change_class = JavaClass(json_dict=change_file)
+    with open(tests, "r") as fp:
+        test_file = json.load(fp)
+        test_class = JavaClass(json_dict=test_file)
+
+    tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
+    return line_by_line_compare(original_class, change_class, test_class, tests)
 
 if __name__ == "__main__":
     print(get_tests(
