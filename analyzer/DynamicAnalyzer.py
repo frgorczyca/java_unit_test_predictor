@@ -58,6 +58,15 @@ class Counter:
     def __repr__(self):
         return f"{self.method_name} in {self.class_name} at {self.counter}"
 
+class TraceStep:
+    def __init__(self, counter: Counter, left_value, right_value):
+        self.counter: Counter = counter
+        self.left_value = left_value
+        self.right_value = right_value
+
+    def __repr__(self):
+        return f"{self.counter.method_name} in {self.counter.class_name} at {self.counter.counter}"
+
 class StackElement:
     def __init__(self, local_variables: List[Value], operational_stack, counter: Counter):
         self.local_variables: List[Value] = local_variables
@@ -83,7 +92,7 @@ class Interpreter:
         self.memory: Dict[str, Value] = memory
         self.stack: List[StackElement] = [StackElement(method_args, [], Counter(java_class, method_name, 0))]
         self.java_classes = java_classes
-        self.trace: List[Counter] = []
+        self.trace: List[TraceStep] = []
 
     def get_class(self, class_name, method_name) -> JavaClass:
         if class_name in self.java_classes.keys():
@@ -96,10 +105,9 @@ class Interpreter:
     def run(self):
         while len(self.stack) > 0:
             element = self.stack.pop()
-            if "Test" not in element.counter.class_name and "junit" not in element.counter.class_name:
-                self.trace.append(element.counter)
             java_class = self.get_class(element.counter.class_name, element.counter.method_name)
             operation = get_operation(java_class, element.counter)
+            self.add_trace_step(element, operation)
             if operation.opr == "return":
                 return perform_return(self, operation, element)
             self.run_operation(operation, element)
@@ -107,6 +115,16 @@ class Interpreter:
     def run_operation(self, operation: Operation, element: StackElement):
         method = method_mapper[operation.opr]
         method(self, operation, element)
+    
+    def add_trace_step(self, element: StackElement, operation: Operation):
+        if "Test" in element.counter.class_name or "junit" in element.counter.class_name:
+            return
+        if operation.opr == "ifz":
+            self.trace.append(TraceStep(element.counter, element.operational_stack[-1].value, 0))
+        elif operation.opr == "if":
+            self.trace.append(TraceStep(element.counter, element.operational_stack[-2].value, element.counter, element.operational_stack[-1]))
+        else:
+            self.trace.append(TraceStep(element.counter, None, None))
 
 def get_operation(java_class: JavaClass, counter: Counter):
     return Operation(java_class.get_method(counter.method_name)["code"]["bytecode"][counter.counter])
@@ -141,7 +159,7 @@ def perform_binary(runner: Interpreter, opr: Operation, element: StackElement):
     result = Value(getattr(first, get_binary(opr))(second))
     runner.stack.append(StackElement(element.local_variables, element.operational_stack + [result], element.counter.next_counter()))
 
-def get_comparison(opr: Operation):
+def get_comparison(condition: str):
       # name must match Python op names
     comparisons = {
         "ne": "__ne__",
@@ -151,12 +169,12 @@ def get_comparison(opr: Operation):
         "le": "__le__",
         "lt": "__lt__"
     }
-    return comparisons[opr.condition]
+    return comparisons[condition]
 
 def perform_compare(runner: Interpreter, opr: Operation, element: StackElement):
     second = element.operational_stack.pop().value
     first = element.operational_stack.pop().value
-    if getattr(first, get_comparison(opr))(second):
+    if getattr(first, get_comparison(opr.condition))(second):
         next_counter = Counter(element.counter.method_name, opr.target)
         runner.stack.append(StackElement(element.local_variables, element.operational_stack, next_counter))
     else:
@@ -165,7 +183,7 @@ def perform_compare(runner: Interpreter, opr: Operation, element: StackElement):
 def perform_compare_zero(runner: Interpreter, opr: Operation, element: StackElement):
     first = element.operational_stack.pop().value
     second = 0
-    if getattr(first, get_comparison(opr))(second):
+    if getattr(first, get_comparison(opr.condition))(second):
         next_counter = Counter(element.counter.class_name, element.counter.method_name, opr.target)
         runner.stack.append(StackElement(element.local_variables, element.operational_stack, next_counter))
     else:
@@ -296,7 +314,7 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
     return args, _memory
 
 def line_by_line_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
-    traces: Dict[str, List[Counter]] = {}
+    traces: Dict[str, List[TraceStep]] = {}
     for test in tests:
         test_name = test["name"]
         interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
@@ -315,12 +333,12 @@ def line_by_line_compare(original_class: JavaClass, change_class: JavaClass, tes
             if i >= len(changed_code) or opr != changed_code[i]:
                 for test_name, trace in traces.items():
                     for step in trace:
-                        if step.class_name == original_class.name and step.method_name == method_name and step.counter == i:
+                        if step.counter.class_name == original_class.name and step.counter.method_name == method_name and step.counter.counter == i:
                             tests_to_run.add(test_name)
     return sorted(tests_to_run)
 
 def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
-    traces: Dict[str, List[Counter]] = {}
+    traces: Dict[str, List[TraceStep]] = {}
     for test in tests:
         test_name = test["name"]
         interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
@@ -333,18 +351,26 @@ def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_cl
     for test_name, trace in traces.items():
         original_idx = 0
         changed_idx = 0
+        method_name = trace[original_idx].counter.method_name
         while original_idx < len(trace):
-            original_step = original_methods[trace[original_idx].method_name]["code"]["bytecode"][trace[original_idx].counter]
-            changed_step = changed_methods[trace[changed_idx].method_name]["code"]["bytecode"][trace[changed_idx].counter]
+            original_step = original_methods[method_name]["code"]["bytecode"][trace[original_idx].counter.counter]
+            changed_step = changed_methods[method_name]["code"]["bytecode"][changed_idx]
             if original_step["opr"] == "goto":
                 original_idx += 1
                 continue
             if changed_step["opr"] == "goto":
-                changed_idx += changed_step["target"]
+                changed_idx = changed_step["target"]
                 continue
             original_step["offset"] = "ignore"
             changed_step["offset"] = "ignore"
-            if original_step != changed_step:
+            if original_step["opr"] in ["if", "ifz"] and changed_step["opr"] in ["if", "ifz"]:
+                changed_eval = getattr(trace[original_idx].left_value, get_comparison(changed_step["condition"]))(trace[original_idx].right_value) 
+                if changed_eval:
+                    changed_idx = changed_step["target"]
+                else:
+                    changed_idx += 1
+                original_idx += 1
+            elif original_step != changed_step:
                 tests_to_run.add(test_name)
                 break
             else:
@@ -364,11 +390,10 @@ def get_tests(old, new, tests):
         test_class = JavaClass(json_dict=test_file)
 
     tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
-    # return line_by_line_compare(original_class, change_class, test_class, tests)
     return sequence_compare(original_class, change_class, test_class, tests)
 
 if __name__ == "__main__":
     print(get_tests(
         "TargetSource/target/classes/org/dtu/analysis/control/Conditions.json",
-        "TargetSource/target/classes/org/dtu/analysis/controlChanges2/ConditionalChanges2.json",
+        "TargetSource/target/classes/org/dtu/analysis/controlChanges1/ConditionalChanges1.json",
         "TargetSource/target/test-classes/org/dtu/analysis/control/ControlFlowTests.json"))
