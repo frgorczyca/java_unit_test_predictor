@@ -1,7 +1,10 @@
+from pathlib import Path
 from typing import List, Dict, Any, Set, Tuple, Generator
 from dataclasses import dataclass
 from enum import Enum
 import json
+
+from analyzer.dependency_graphs.bounds import load_tree_from_file, parse_tree, Bounds
 
 """
 Semantic static analyzer
@@ -102,12 +105,28 @@ class JavaProgram:
         raise NotImplementedError()
 
 
-def parse_program(list_of_bytecode_files: List[str]) -> JavaProgram:
+def parse_program(list_of_bytecode_files: List[str], list_of_source_files: List[str]) -> JavaProgram:
+    """
+    :param list_of_bytecode_files:
+    :param list_of_source_files:
+    :return:
+    """
+    class_bound_dict: Dict[str, Bounds] = {}
+    method_bound_dict: Dict[str, Bounds] = {}
+    for source_file in list_of_source_files:
+        tree = load_tree_from_file(Path(source_file))
+        class_bounds, method_bounds = parse_tree(tree)
+        for bound in class_bounds:
+            class_bound_dict[bound.name] = bound
+        for bound in method_bounds:
+            method_bound_dict[bound.name] = bound
+
     class_dict = {}
     method_dict = {}
-    for file in list_of_bytecode_files:
-        text = get_file_text(file)
-        json_dict = json.loads(text)
+    for bytecode_file in list_of_bytecode_files:
+        bytecode_text = get_file_text(bytecode_file)
+        json_dict = json.loads(bytecode_text)
+
         java_class, class_methods = parse_json_class(json_dict)
         class_dict[java_class.name] = java_class
         method_dict.update(class_methods)
@@ -186,17 +205,11 @@ def get_file_text(file) -> str:
 
 def main():
     from pathlib import Path
-    from tree_sitter.binding import Tree, Node
-    from tree_sitter import Language, Parser
-    from analyzer.dependency_graphs.bounds import print_tree, JAVA_LANGUAGE, parse_tree
+    from analyzer.dependency_graphs.bounds import parse_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
     source_path = Path("TargetSource/src/main/java/org/dtu/analysis/vector/Scene.java")
 
-    parser = Parser()
-    parser.set_language(JAVA_LANGUAGE)
-    handle = open(source_path).read()
-    tree = parser.parse(bytes(handle, "utf8"))
-    # print_tree(tree)
+    tree = load_tree_from_file(source_path)
     print(parse_tree(tree)[1])
 
     text = get_file_text(path)
