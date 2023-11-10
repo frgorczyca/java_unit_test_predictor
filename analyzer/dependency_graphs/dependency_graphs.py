@@ -37,6 +37,8 @@ class JavaClass:
     name: str  # fully qualified name
     superclass: str  # fully qualified name
     methods: List[str]
+    start_point: (int, int)
+    end_point: (int, int)
 
     def __hash__(self):
         return hash(self.name)  # fully qualified name guaranteed to be unique
@@ -45,9 +47,21 @@ class JavaClass:
 @dataclass(frozen=True)
 class JavaMethod:
     name: str  # fully qualified name
+    params: List[str]
     binding: MethodBind
     bytecode: List[Dict[Any, Any]]
     calls: Set[str]
+    start_point: (int, int)
+    end_point: (int, int)
+
+    def signature(self) -> str:
+        """
+        We only care about overloadable characteristics so the signature is just name+params. Note
+        that ridiculously long and convoluted signatures are possible because user created types
+        are fully qualified
+        :return: string signature like: int func(int a, float b) -> "func.int.float"
+        """
+        return f"{self.name}.{'.'.join(self.params)}"
 
     def __eq__(self, other):
         if isinstance(other, JavaMethod):
@@ -126,8 +140,8 @@ def parse_program(list_of_bytecode_files: List[str], list_of_source_files: List[
     for bytecode_file in list_of_bytecode_files:
         bytecode_text = get_file_text(bytecode_file)
         json_dict = json.loads(bytecode_text)
-
-        java_class, class_methods = parse_json_class(json_dict)
+        # The entire dictionary has to be passed since classes can have inner classes
+        java_class, class_methods = parse_json_class(json_dict, class_bound_dict, method_bound_dict)
         class_dict[java_class.name] = java_class
         method_dict.update(class_methods)
 
@@ -138,17 +152,23 @@ def parse_program(list_of_bytecode_files: List[str], list_of_source_files: List[
     return java_program
 
 
-def parse_json_class(json_dict: Dict[Any, Any]) -> Tuple[JavaClass, Dict[str, JavaMethod]]:
+def parse_json_class(json_dict: Dict[Any, Any],
+                     class_bound_dict: Dict[str, Bounds],
+                     method_bound_dict: Dict[str, Bounds]
+                     ) -> Tuple[JavaClass, Dict[str, JavaMethod]]:
     try:
         name = json_dict["name"]
         superclass = json_dict["super"]["name"]
-        methods = [parse_json_method(name, method_json) for method_json in json_dict["methods"]]
+        methods = [parse_json_method(name, method_json, method_bound_dict) for method_json in json_dict["methods"]]
         names = [method.name for method in methods]
+        bounds = class_bound_dict[name]
 
         java_class = JavaClass(
             name=name,
             superclass=superclass,
-            methods=names
+            methods=names,
+            start_point=bounds.start_point,
+            end_point=bounds.end_point,
         )
 
         method_dict = {name: method for (name, method) in zip(names, methods)}
@@ -158,17 +178,30 @@ def parse_json_class(json_dict: Dict[Any, Any]) -> Tuple[JavaClass, Dict[str, Ja
         print(f"parse_json_class: {err}")
 
 
-def parse_json_method(class_name: str, json_dict: Dict[Any, Any]) -> JavaMethod:
+def method_signature(name: str, params: List[str]) -> str:
+    params = [param.split("/")[-1] for param in params]
+    return f"{name}.{'.'.join(params)}"
+
+
+def parse_json_method(class_name: str, json_dict: Dict[Any, Any], method_bound_dict: Dict[str, Bounds]) -> JavaMethod:
     try:
         name = f"{class_name}.{json_dict['name']}"
         binding = get_binding(json_dict)
         bytecode = json_dict["code"]["bytecode"]
         calls = parse_calls(bytecode)
+        params = parse_params(json_dict["params"])
+
+        signature = method_signature(name, params)
+        bounds = method_bound_dict[signature]
+
         return JavaMethod(
             name=name,
+            params=params,
             binding=binding,
             bytecode=bytecode,
             calls=set(calls),
+            start_point=bounds.start_point,
+            end_point=bounds.end_point,
         )
     except Exception as err:
         print(f"parse_json_method: {err}")
@@ -192,6 +225,43 @@ def parse_calls(bytecode: List[Dict[Any, Any]]) -> Generator[str, None, None]:
         print(f"parse_calls: {err}")
 
 
+def parse_params(params: List[Dict[str, Any]]) -> List[str]:
+    parameter_list = []
+    for param in params:
+        reference_dict_maybe = param.get("type")
+        if reference_dict_maybe:
+            # try base types
+            base_type_maybe = reference_dict_maybe.get("base")
+            if base_type_maybe is not None:
+                parameter_list.append(base_type_maybe)
+                continue
+            # try list types
+            list_type_maybe = reference_dict_maybe.get("kind")
+            if list_type_maybe == "array":
+                base_type_maybe = reference_dict_maybe["type"].get("base")
+                if base_type_maybe:
+                    parameter_list.append(f"{base_type_maybe}[]")
+                    continue
+                reference_type_maybe = reference_dict_maybe["type"].get("name")
+                if reference_type_maybe:
+                    parameter_list.append(f"{reference_type_maybe}[]")
+                    continue
+            # try inner types
+            inner_type_maybe = reference_dict_maybe.get("inner")
+            if inner_type_maybe:
+                inner_type = inner_type_maybe.get("name")
+                if inner_type:
+                    parameter_list.append(inner_type)
+                    continue
+            reference_type_maybe = reference_dict_maybe.get("name")
+            if reference_type_maybe:
+                parameter_list.append(reference_type_maybe)
+                continue
+        raise Exception(f"An unknown type was reached in: {params}\n{param}")
+
+    return parameter_list
+
+
 def get_file_text(file) -> str:
     """Get text from a file in the given path"""
     try:
@@ -205,17 +275,13 @@ def get_file_text(file) -> str:
 
 def main():
     from pathlib import Path
-    from analyzer.dependency_graphs.bounds import parse_tree
+    from analyzer.dependency_graphs.bounds import parse_tree, print_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
-    source_path = Path("TargetSource/src/main/java/org/dtu/analysis/vector/Scene.java")
+    source_path = Path("TargetSource/src/main/java/org/dtu/analysis/overloads/Overload.java")
 
     tree = load_tree_from_file(source_path)
-    print(parse_tree(tree)[1])
-
-    text = get_file_text(path)
-    json_dict = json.loads(text)
-    program = parse_json_class(json_dict)
-    # print(program)
+    print_tree(tree, False)
+    # print(parse_tree(tree)[1])
 
 
 if __name__ == "__main__":

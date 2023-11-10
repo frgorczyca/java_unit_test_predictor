@@ -28,18 +28,30 @@ def find_all_named(node: Node, name: str) -> List[Node]:
     return [child for child in (child for child in node.named_children if child.type == name)]
 
 
-def print_node_recursive(node: Node, prepend: str = ""):
+def find_all_named_list(node: Node, *names: str):
+    return [child for child in (child for child in node.named_children if child.type in names)]
+
+
+def print_node_recursive(node: Node, prepend: str = "", all_parameters=False):
     print(f"{prepend}{node.type}:{node.text} ({node.start_point}:{node.end_point})")
-    for child in node.named_children:
-        print_node_recursive(child, prepend+"  ")
+    if all_parameters:
+        for child in node.children:
+            print_node_recursive(child, prepend+"  ", True)
+    else:
+        for child in node.named_children:
+            print_node_recursive(child, prepend+"  ")
 
 
-def print_tree(tree: Tree):
-    print_node_recursive(tree.root_node, "")
+def print_tree(tree: Tree, all_parameters=False):
+    print_node_recursive(tree.root_node, "", all_parameters)
 
 
 def find_methods(class_body: Node) -> List[Node]:
     return find_all_named(class_body, "method_declaration")
+
+
+def find_constructors(class_body: Node) -> List[Node]:
+    return find_all_named(class_body, "constructor_declaration")
 
 
 def find_class_node(node: Node) -> Optional[Node]:
@@ -65,6 +77,17 @@ def find_package_name(root_node: Node) -> str:
     return identifier.text.decode("UTF-8")
 
 
+def find_parameters(node: Node) -> List[str]:
+    parameters = find_first_named(node, "formal_parameters")
+    parameters = find_all_named(parameters, "formal_parameter")
+    list_of_types = []
+    for param in parameters:
+        param_type = find_any_first_named_greedy(param, ["integral_type", "floating_point_type", "boolean_type", "array_type", "type_identifier"])
+        list_of_types.append(param_type.text.decode("UTF-8").replace(" ", ""))
+    assert len(parameters) == len(list_of_types)
+    return list_of_types
+
+
 @dataclass(frozen=True)
 class Bounds:
     name: str  # fully qualified name
@@ -72,10 +95,33 @@ class Bounds:
     end_point: (int, int)
 
     @staticmethod
-    def from_node(node: Node, name_qualifier="", sep=".") -> 'Bounds':
+    def from_class(node: Node, name_qualifier="", sep=".") -> 'Bounds':
         name = f"{name_qualifier}{sep}{find_identifier_name(node)}"
         start_point = node.start_point
         end_point = node.end_point
+        return Bounds(name, start_point, end_point)
+
+    @staticmethod
+    def from_method(node: Node, name_qualifier="", sep=".") -> 'Bounds':
+        params = find_parameters(node)
+        name = ".".join([f"{name_qualifier}{sep}{find_identifier_name(node)}", '.'.join(params)])
+        start_point = node.start_point
+        end_point = node.end_point
+        return Bounds(name, start_point, end_point)
+
+    @staticmethod
+    def from_constructor(node: Node, name_qualifier="", sep=".") -> 'Bounds':
+        params = find_parameters(node)
+        name = ".".join([f"{name_qualifier}{sep}<init>", '.'.join(params)])
+        start_point = node.start_point
+        end_point = node.end_point
+        return Bounds(name, start_point, end_point)
+
+    @staticmethod
+    def from_given_name(name_qualifier="", name="", sep="."):
+        name = f"{name_qualifier}{sep}{name}."
+        start_point = (-1, -1)
+        end_point = (-1, -1)
         return Bounds(name, start_point, end_point)
 
 
@@ -90,11 +136,18 @@ def parse_tree(tree: Tree) -> Tuple[List[Bounds], List[Bounds]]:
 
         inner_class_nodes = find_inner_class_nodes(class_body_node)
         class_methods = find_methods(class_body_node)
+        class_constructors = find_constructors(class_body_node)
 
-        class_bound = Bounds.from_node(class_root_node, prepend_name, sep=sep)
+        class_bound = Bounds.from_class(class_root_node, prepend_name, sep=sep)
         _class_bounds.append(class_bound)
         prepend_name = class_bound.name
-        _method_bounds += [Bounds.from_node(method_node, prepend_name, sep=".") for method_node in class_methods]
+        _method_bounds += [Bounds.from_method(method_node, prepend_name, sep=".") for method_node in class_methods]
+        _method_bounds += [Bounds.from_constructor(constructor_node, prepend_name, sep=".") for constructor_node in class_constructors]
+        # Add a default constructor if it doesn't exist
+        if len(class_constructors) == 0:
+            _method_bounds.append(Bounds.from_given_name(prepend_name, name="<init>", sep="."))
+        # Add a class constructor
+        _method_bounds.append(Bounds.from_given_name(prepend_name, name="<clinit>", sep="."))
 
         for node in inner_class_nodes:
             parse_tree_recursive(node, prepend_name, sep="$", _class_bounds=_class_bounds, _method_bounds=_method_bounds)
