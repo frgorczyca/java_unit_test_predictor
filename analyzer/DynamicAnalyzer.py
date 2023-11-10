@@ -313,30 +313,6 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
             args.append(Value(arg, type_name))
     return args, _memory
 
-def line_by_line_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
-    traces: Dict[str, List[TraceStep]] = {}
-    for test in tests:
-        test_name = test["name"]
-        interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
-        interpreter.run()
-        traces[test_name] = interpreter.trace
-
-    original_methods = { x["name"]: x for x in original_class.get_methods() }
-    changed_methods = { x["name"]: x for x in change_class.get_methods() }
-    tests_to_run = set()
-    for method_name in original_methods.keys():
-        changed_method = changed_methods[method_name]
-        for i, opr in enumerate(original_methods[method_name]["code"]["bytecode"]):
-            changed_code = changed_method["code"]["bytecode"]
-            changed_code[i]["offset"] = "ignore"
-            opr["offset"] = "ignore"
-            if i >= len(changed_code) or opr != changed_code[i]:
-                for test_name, trace in traces.items():
-                    for step in trace:
-                        if step.counter.class_name == original_class.name and step.counter.method_name == method_name and step.counter.counter == i:
-                            tests_to_run.add(test_name)
-    return sorted(tests_to_run)
-
 def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
     traces: Dict[str, List[TraceStep]] = {}
     for test in tests:
