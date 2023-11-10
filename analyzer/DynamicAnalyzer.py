@@ -96,7 +96,8 @@ class Interpreter:
     def run(self):
         while len(self.stack) > 0:
             element = self.stack.pop()
-            self.trace.append(element.counter)
+            if "Test" not in element.counter.class_name and "junit" not in element.counter.class_name:
+                self.trace.append(element.counter)
             java_class = self.get_class(element.counter.class_name, element.counter.method_name)
             operation = Operation(java_class.get_method(element.counter.method_name)["code"]["bytecode"][element.counter.counter])
             if operation.opr == "return":
