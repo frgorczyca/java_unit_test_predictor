@@ -3,6 +3,10 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 
+"""
+Semantic static analyzer
+"""
+
 
 class MethodBind(Enum):
     Static = 0
@@ -20,8 +24,8 @@ def get_binding(method_dict: Dict[Any, Any]) -> MethodBind:
 
 
 def bytecode_eq(left: List[Dict[Any, Any]], right: List[Dict[Any, Any]]) -> bool:
-    # Python does value wise comparison here, but this is too aggressive,
-    # too many checks are made and certain equalities are rejected
+    # TODO: Python does value wise comparison here, but this is too aggressive
+    #       too many checks are made and certain equalities are rejected
     return left == right
 
 
@@ -70,8 +74,8 @@ class JavaProgram:
     def get_call_graph(self, method: str) -> Set[str]:
         """
         Greedy algorithm to find call dependencies
-        :param method:
-        :return:
+        :param method: call graph of method to search
+        :return: set of names of all method calls listed once
         """
         method = self.methods[method]  # Fail immediately if method is not known
 
@@ -89,17 +93,19 @@ class JavaProgram:
         return self.methods[f"{class_name}.{method_name}"]
 
     def dumps(self, file_name):
-        return NotImplemented
+        # TODO
+        raise NotImplementedError()
 
     @staticmethod
     def loads(file_name) -> "JavaProgram":
-        return NotImplemented
+        # TODO
+        raise NotImplementedError()
 
 
-def parse_program(list_of_files) -> JavaProgram:
+def parse_program(list_of_bytecode_files: List[str]) -> JavaProgram:
     class_dict = {}
     method_dict = {}
-    for file in list_of_files:
+    for file in list_of_bytecode_files:
         text = get_file_text(file)
         json_dict = json.loads(text)
         java_class, class_methods = parse_json_class(json_dict)
@@ -180,11 +186,23 @@ def get_file_text(file) -> str:
 
 def main():
     from pathlib import Path
+    from tree_sitter.binding import Tree, Node
+    from tree_sitter import Language, Parser
+    from analyzer.dependency_graphs.util import print_tree, JAVA_LANGUAGE, parse_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
+    source_path = Path("TargetSource/src/main/java/org/dtu/analysis/vector/Scene.java")
+
+    parser = Parser()
+    parser.set_language(JAVA_LANGUAGE)
+    handle = open(source_path).read()
+    tree = parser.parse(bytes(handle, "utf8"))
+    # print_tree(tree)
+    print(parse_tree(tree)[1])
+
     text = get_file_text(path)
     json_dict = json.loads(text)
     program = parse_json_class(json_dict)
-    print(program)
+    # print(program)
 
 
 if __name__ == "__main__":
