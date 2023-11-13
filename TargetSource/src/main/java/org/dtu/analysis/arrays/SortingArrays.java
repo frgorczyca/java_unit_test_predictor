@@ -2,6 +2,8 @@ package org.dtu.analysis.arrays;
 
 public class SortingArrays {
     public static int find_max(int [] arr) {
+        // Comment
+        int distraction = 10;
         int max = 0;
 
         for (int j : arr) {
@@ -10,7 +12,7 @@ public class SortingArrays {
             }
         }
 
-        return max;
+        return distraction;
     }
 
     static void sort(int[] arr) {

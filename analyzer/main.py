@@ -1,9 +1,10 @@
 from ProjectManager import *
 from ByteCode import *
 from SyntaxAnalyzer import *
+from dependency_graphs import *
 
 use_bytecode = 1
-use_syntax = 0
+use_syntax = 1
 
 if __name__ == "__main__":
 
@@ -12,6 +13,11 @@ if __name__ == "__main__":
     if not Manager.check_if_dir_exists():
         print("Init")
         Manager.init_test_data()
+        test_files = Manager.getKnownTests()
+        dict = Syntax.ParseTests(test_files)
+                
+        # Save generated dict
+        Manager.saveTestsDep(dict, Manager.path_data)
         print("Init done")
         initialized = False
 
@@ -50,8 +56,15 @@ if __name__ == "__main__":
                 print("Doing plain syntax analyzis...")
                 test_files = Manager.getKnownTests()
                 dict = Syntax.ParseTests(test_files)
-                
-                # Save generated dict
                 Manager.saveTestsDep(dict, Manager.path_data)
+                diff = Syntax.getDiff(file, name)
+
+                Syntax.analyzeDiff(diff)
+
+            # old_path = os.path.join(Manager.bytecode_old, name + ".json")
+            # text = get_file_text(old_path)
+            # json_dict = json.loads(text)
+            # program = parse_json_class(json_dict)
+            # print(program)
 
             # Manager.getDiff(file, name)

@@ -1,5 +1,7 @@
 from tree_sitter import Language, Parser
 import os
+import difflib
+import re
 
 lib_path = os.path.join(os.getcwd(), "tree-sitter", "libtree-sitter-java.so")
 
@@ -16,15 +18,14 @@ class Syntax :
             test_cont = open(test).read()
             tree = Syntax.parser.parse(bytes(test_cont, "utf8"))
 
-            tree.root_node.child_by_field_name
-
             for child in tree.root_node.children :
                 if (child.type == "class_declaration") :
                     body = Syntax.getClassBody(child)
                     methods = Syntax.getMethods(body)
 
                     for method in methods :
-                        if Syntax.checkIfTest(method) :
+                        is_test, test_name = Syntax.checkIfTest(method) 
+                        if is_test:
                             m_inv = Syntax.findInvocations(method)
                             ret = Syntax.getCreation(method)
 
@@ -38,7 +39,7 @@ class Syntax :
 
                                     if (obj in ret) :
                                         obj = ret[obj]
-
+                                    l_dict["name"] = test_name
                                     l_dict[obj] = name
                                     tested.append(l_dict)
 
@@ -60,10 +61,19 @@ class Syntax :
         return methods
     
     def checkIfTest(method) :
-        if "@Test" in method.text.decode("UTF-8") :
-            return True
+        text = method.text.decode("UTF-8")
+        name = ""
+        if "@Test" in text :
+            text = text.split(' ')
+            for i, word in enumerate(text) :
+                if ("void" in word) :
+                    index = i+1
+                    while(text[index] == "") :
+                        index += 1
+                    name = text[index]
+            return True, name
         else :
-            return False
+            return False, name
         
     def findInvocations(parent) :
         inv = []
@@ -99,3 +109,106 @@ class Syntax :
                 ret.update(Syntax.getCreation(child))
 
         return ret
+    
+    @staticmethod
+    def compareReturns(old, new) :
+
+        changed = []
+        o_type = old.children[1].type
+        o_text = old.children[1].text.decode("UTF-8")
+        
+        n_type = new.children[1].type
+        n_text = new.children[1].text.decode("UTF-8")
+
+        if (o_type != n_type) :
+            # Depends what is stored in dependency graph, new or old?
+            changed.append(n_text)
+        else :
+            if o_type == "identifier" :
+                if o_text != n_text :
+                    changed.append(n_text)
+            if o_type == "field_access" :
+                pass
+            if o_type == "array_access" :
+                pass
+        return changed
+    
+    @staticmethod
+    def getDiff(origin, name) :
+        old = os.path.join(os.getcwd(), "analyzer", "data", "olds-src", name + ".java")
+        f_origin = open(origin)
+        f_old = open(old)
+
+        cur_cont = f_origin.readlines()
+        old_cont = f_old.readlines()
+
+        diff = difflib.unified_diff(cur_cont, old_cont, fromfile=origin, tofile=old)
+
+        return diff
+
+    @staticmethod
+    def findInNew(new_root, node_type) :
+        matching = []
+        for child in new_root.children:
+            if child.type == node_type:
+                matching.append(child)
+            matching += Syntax.findInNew(child, node_type)
+        return matching
+
+    @staticmethod
+    def analyzeDiff(diff) :
+        ranges = []
+        diff_old = []
+        diff_new = []
+
+        list_changes = []
+
+        for line in diff:
+            res = re.findall(r'^@.+@$', line)
+            if res :
+                ranges.append(res)
+                continue
+            res = re.findall(r'^\+', line)
+            if res :
+                if not "+++" in line:
+                    line = line.replace("+", "", 1)
+                    diff_old.append(line)
+                    continue
+            res = re.findall(r'^\-', line)
+            if res:
+                if not "---" in line:
+                    line = line.replace("-", "", 1)
+                    diff_new.append(line)
+                    continue
+        
+        separator = '\n'
+        old_str = separator.join(diff_old)
+        new_str = separator.join(diff_new)
+
+        # print(old_str)
+        # print(new_str)
+        res = []
+        new_ranges = []
+
+        for rng in ranges:
+            res += re.findall(r'\d+', rng[0])
+        
+        for i in range(0, len(res)-1, 4) :
+            new_ranges.append([res[i+2], res[i+3]])
+
+        old_tree = Syntax.parser.parse(bytes(old_str, "utf8"))
+        new_tree = Syntax.parser.parse(bytes(new_str, "utf8"))
+
+        old_root = old_tree.root_node
+        new_root = new_tree.root_node
+
+        # get changed content
+        for child in old_root.children:
+            nodes = Syntax.findInNew(new_root, child.type)
+            
+            # Handle different cases
+            if child.type == "return_statement" :
+                res = Syntax.compareReturns(child, nodes[0])
+                list_changes.append(res)
+
+        print(list_changes)

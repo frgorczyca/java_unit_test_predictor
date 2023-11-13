@@ -178,15 +178,15 @@ def get_file_text(file) -> str:
     return content
 
 
-def main():
-    from pathlib import Path
-    path = Path("analyzer/data/bytecode/old/Scene.json")
-    text = get_file_text(path)
-    json_dict = json.loads(text)
-    program = parse_json_class(json_dict)
-    print(program)
+# def main():
+#     from pathlib import Path
+#     path = Path("analyzer/data/bytecode/old/Scene.json")
+#     text = get_file_text(path)
+#     json_dict = json.loads(text)
+#     program = parse_json_class(json_dict)
+#     print(program)
 
 
-if __name__ == "__main__":
-    # Needs to run from the root directory
-    main()
+# if __name__ == "__main__":
+#     # Needs to run from the root directory
+#     main()

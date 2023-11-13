@@ -23,6 +23,7 @@ public class NaiveArrays {
             return null;
         }
 
+        int test = 10;
         int [] sum = new int [a.length];
 
         for (int i = 0; i < sum.length; i++) {
