@@ -2,6 +2,7 @@ package org.dtu.analysis.arrays;
 
 public class SortingArrays {
     public static int find_max(int [] arr) {
+        // Comment
         int max = 0;
 
         for (int j : arr) {

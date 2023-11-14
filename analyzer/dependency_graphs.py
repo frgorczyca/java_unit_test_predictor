@@ -3,8 +3,7 @@ from typing import List, Dict, Any, Set, Tuple, Generator
 from dataclasses import dataclass
 from enum import Enum
 import json
-
-from analyzer.dependency_graphs.bounds import load_tree_from_file, parse_tree, Bounds
+from bounds import load_tree_from_file, parse_tree, Bounds
 
 """
 Semantic static analyzer
@@ -275,7 +274,7 @@ def get_file_text(file) -> str:
 
 def main():
     from pathlib import Path
-    from analyzer.dependency_graphs.bounds import parse_tree, print_tree
+    from bounds import parse_tree, print_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
     source_path = Path("TargetSource/src/main/java/org/dtu/analysis/overloads/Overload.java")
 
@@ -284,6 +283,6 @@ def main():
     # print(parse_tree(tree)[1])
 
 
-if __name__ == "__main__":
-    # Needs to run from the root directory
-    main()
+# if __name__ == "__main__":
+#     # Needs to run from the root directory
+#     main()

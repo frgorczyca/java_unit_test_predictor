@@ -1,9 +1,11 @@
 from ProjectManager import *
 from ByteCode import *
 from SyntaxAnalyzer import *
+from dependency_graphs import *
+from dependency_graphs import parse_program
 
 use_bytecode = 1
-use_syntax = 0
+use_syntax = 1
 
 if __name__ == "__main__":
 
@@ -12,12 +14,18 @@ if __name__ == "__main__":
     if not Manager.check_if_dir_exists():
         print("Init")
         Manager.init_test_data()
+        test_files = Manager.getKnownTests()
+        dict = Syntax.ParseTests(test_files)
+                
+        # Save generated dict
+        Manager.saveTestsDep(dict, Manager.path_data)
         print("Init done")
         initialized = False
 
     if (initialized) :
         print("Starting analyzers...")
         mod_files = Manager.findModifiedFiles()
+        modifications = []
         for file in mod_files :
             name = os.path.basename(file)
             name = name.split(".")[0]
@@ -48,10 +56,29 @@ if __name__ == "__main__":
             
             if (use_syntax) :
                 print("Doing plain syntax analyzis...")
+
+                old_path = os.path.join(Manager.bytecode_old, name + ".json")
+                olds = [old_path]
+                files = [file]
+                program = parse_program(olds, files)
+
                 test_files = Manager.getKnownTests()
                 dict = Syntax.ParseTests(test_files)
-                
-                # Save generated dict
                 Manager.saveTestsDep(dict, Manager.path_data)
+                diff, old_cont = Syntax.getDiff(file, name)
 
-            # Manager.getDiff(file, name)
+                ranges = Syntax.analyzeDiff(diff, old_cont)
+
+                for rg in ranges :
+                    for key in program.classes:
+                        if rg >= program.classes[key].start_point[0] and rg <=  program.classes[key].end_point[0] :
+                            for method in program.classes[key].methods :
+                                if rg <= program.methods[method].end_point[0] and rg >= program.methods[method].start_point[0] :
+                                    modifications.append(program.methods[method].name)
+                
+            print(modifications)
+            # Example output
+            # ['org/dtu/analysis/arrays/NaiveArrays.sum_elements',
+            #  'org/dtu/analysis/arrays/NaiveArrays.sum_elements',
+            #  'org/dtu/analysis/arrays/SortingArrays.find_max',
+            #  'org/dtu/analysis/arrays/SortingArrays.find_max']

@@ -1,9 +1,7 @@
-import pytest
 import csv
-import os
 from glob import glob
 from pathlib import Path
-from analyzer.dependency_graphs.dependency_graphs import parse_program
+from dependency_graphs import parse_program
 
 
 def get_file_list():
@@ -29,5 +27,3 @@ class TestDependencyGraphs:
     def test_dependency_graph_creation(self):
         bc_files, source_files = get_file_list()
         parse_program(bc_files, source_files)
-
-
