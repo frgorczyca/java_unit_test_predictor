@@ -121,7 +121,6 @@ class Syntax :
         n_text = new.children[1].text.decode("UTF-8")
 
         if (o_type != n_type) :
-            # Depends what is stored in dependency graph, new or old?
             changed.append(n_text)
         else :
             if o_type == "identifier" :
@@ -144,7 +143,7 @@ class Syntax :
 
         diff = difflib.unified_diff(cur_cont, old_cont, fromfile=origin, tofile=old)
 
-        return diff
+        return diff, old_cont
 
     @staticmethod
     def findInNew(new_root, node_type) :
@@ -156,11 +155,17 @@ class Syntax :
         return matching
 
     @staticmethod
-    def analyzeDiff(diff) :
+    def getVariable(node):
+        for child in node.children :
+            if child.type == "variable_declarator" :
+                return child.children[0].text, child.children[2].text
+
+    @staticmethod
+    def analyzeDiff(diff, old_cont) :
         ranges = []
         diff_old = []
         diff_new = []
-
+        nodes_old = []
         list_changes = []
 
         for line in diff:
@@ -181,12 +186,6 @@ class Syntax :
                     diff_new.append(line)
                     continue
         
-        separator = '\n'
-        old_str = separator.join(diff_old)
-        new_str = separator.join(diff_new)
-
-        # print(old_str)
-        # print(new_str)
         res = []
         new_ranges = []
 
@@ -196,19 +195,39 @@ class Syntax :
         for i in range(0, len(res)-1, 4) :
             new_ranges.append([res[i+2], res[i+3]])
 
-        old_tree = Syntax.parser.parse(bytes(old_str, "utf8"))
-        new_tree = Syntax.parser.parse(bytes(new_str, "utf8"))
+        for diff in diff_old:
+            nodes_old.append(Syntax.parser.parse(bytes(diff, "utf8")))
 
-        old_root = old_tree.root_node
-        new_root = new_tree.root_node
+        for node in nodes_old :
+            if (node.root_node.child_count > 0) :
 
-        # get changed content
-        for child in old_root.children:
-            nodes = Syntax.findInNew(new_root, child.type)
-            
-            # Handle different cases
-            if child.type == "return_statement" :
-                res = Syntax.compareReturns(child, nodes[0])
-                list_changes.append(res)
+                if (node.root_node.children[0].type == "local_variable_declaration") :
+                    name, val = Syntax.getVariable(node.root_node.children[0])
+                    # occurences = 0
+                    # for sub_node in nodes_old:
+                    #     text = sub_node.root_node.text
+                    #     occurences += text.count(name)
+                        
+                    #     if (occurences > 1) :
+                    #         break
+                    
+                    # if (occurences > 1) :
+                    for rg in new_ranges:
+                        for i in range(int(rg[0]), int(rg[0]) + int(rg[1])):
+                            if (node.root_node.children[0].text.decode("utf8") in old_cont[i]) :
+                                list_changes.append(i)
+                                break
+                    continue
 
-        print(list_changes)
+                if (node.root_node.children[0].type == "return_statement" or 
+                        node.root_node.children[0].type == "expression_statement" or 
+                        node.root_node.children[0].type == "if_statement") :
+                    
+                    for rg in new_ranges:
+                        for i in range(int(rg[0]), int(rg[0]) + int(rg[1])):
+                            if (node.root_node.children[0].text.decode("utf8") in old_cont[i]) :
+                                list_changes.append(i)
+                                break
+                    continue
+
+        return list_changes

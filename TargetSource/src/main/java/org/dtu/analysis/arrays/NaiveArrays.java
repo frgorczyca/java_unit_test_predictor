@@ -5,8 +5,7 @@ package org.dtu.analysis.arrays;
 public class NaiveArrays {
 
     public static int sum_elements(int [] arr) {
-        int sum = 50;
-        int var = 1;
+        int sum = 0;
 
         for (int i : arr) {
             sum += i;
