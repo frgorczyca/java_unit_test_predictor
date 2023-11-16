@@ -47,7 +47,7 @@ class JavaClass:
 @dataclass(frozen=True)
 class JavaMethod:
     name: str  # fully qualified name
-    params: List[str]
+    # params: List[str]
     binding: MethodBind
     bytecode: List[Dict[Any, Any]]
     calls: Set[str]
@@ -59,9 +59,10 @@ class JavaMethod:
         We only care about overloadable characteristics so the signature is just name+params. Note
         that ridiculously long and convoluted signatures are possible because user created types
         are fully qualified
-        :return: string signature like: int func(int a, float b) -> "func.int.float"
+        :return: string signature like: ```int func(int a, float b)``` -> "func.int.float"
         """
-        return f"{self.name}.{'.'.join(self.params)}"
+        raise NotImplementedError
+        # return f"{self.name}.{'.'.join(self.params)}"
 
     def __eq__(self, other):
         if isinstance(other, JavaMethod):
@@ -86,7 +87,6 @@ class JavaMethod:
 class JavaProgram:
     classes: Dict[str, JavaClass]
     methods: Dict[str, JavaMethod]
-    pass
 
     def get_call_graph(self, method: str) -> Set[str]:
         """
@@ -189,14 +189,14 @@ def parse_json_method(class_name: str, json_dict: Dict[Any, Any], method_bound_d
         binding = get_binding(json_dict)
         bytecode = json_dict["code"]["bytecode"]
         calls = parse_calls(bytecode)
-        params = parse_params(json_dict["params"])
+        # params = parse_params(json_dict["params"])
 
-        signature = method_signature(name, params)
-        bounds = method_bound_dict[signature]
+        # signature = method_signature(name, params)
+        bounds = method_bound_dict[name]
 
         return JavaMethod(
             name=name,
-            params=params,
+            # params=params,
             binding=binding,
             bytecode=bytecode,
             calls=set(calls),
@@ -253,6 +253,7 @@ def parse_params(params: List[Dict[str, Any]]) -> List[str]:
                 if inner_type:
                     parameter_list.append(inner_type)
                     continue
+            # try reference types
             reference_type_maybe = reference_dict_maybe.get("name")
             if reference_type_maybe:
                 parameter_list.append(reference_type_maybe)
@@ -275,13 +276,19 @@ def get_file_text(file) -> str:
 
 def main():
     from pathlib import Path
-    from analyzer.dependency_graphs.bounds import parse_tree, print_tree
+    from analyzer.dependency_graphs.bounds import print_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
     source_path = Path("TargetSource/src/main/java/org/dtu/analysis/overloads/Overload.java")
 
     tree = load_tree_from_file(source_path)
     print_tree(tree, False)
     # print(parse_tree(tree)[1])
+
+
+from analyzer.interface import JavaTestAnalyzer
+
+class DepGraphAnalyzer(JavaTestAnalyzer):
+    pass
 
 
 if __name__ == "__main__":

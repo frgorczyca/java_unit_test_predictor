@@ -103,23 +103,23 @@ class Bounds:
 
     @staticmethod
     def from_method(node: Node, name_qualifier="", sep=".") -> 'Bounds':
-        params = find_parameters(node)
-        name = ".".join([f"{name_qualifier}{sep}{find_identifier_name(node)}", '.'.join(params)])
+        # params = find_parameters(node)
+        name = ".".join([f"{name_qualifier}{sep}{find_identifier_name(node)}"])  # , '.'.join(params)])
         start_point = node.start_point
         end_point = node.end_point
         return Bounds(name, start_point, end_point)
 
     @staticmethod
     def from_constructor(node: Node, name_qualifier="", sep=".") -> 'Bounds':
-        params = find_parameters(node)
-        name = ".".join([f"{name_qualifier}{sep}<init>", '.'.join(params)])
+        # params = find_parameters(node)
+        name = ".".join([f"{name_qualifier}{sep}<init>"])  # , '.'.join(params)])
         start_point = node.start_point
         end_point = node.end_point
         return Bounds(name, start_point, end_point)
 
     @staticmethod
     def from_given_name(name_qualifier="", name="", sep="."):
-        name = f"{name_qualifier}{sep}{name}."
+        name = f"{name_qualifier}{sep}{name}"
         start_point = (-1, -1)
         end_point = (-1, -1)
         return Bounds(name, start_point, end_point)
