@@ -2,7 +2,6 @@ import os
 import csv
 import re
 import shutil
-import difflib
 import subprocess
 import json
 
@@ -16,12 +15,13 @@ def test_jvm2json() -> str:
         result = subprocess.run(["jvm2json", "-h"], capture_output=True)
         if result.returncode == 0:
             return "jvm2json"
-        result = subprocess.run([JVM2JSON_PATH, "-h"], capture_output=True)
-        if result.returncode == 0:
-            return JVM2JSON_PATH
     except Exception:
-        raise Exception(f"jvm2json not found on $PATH or {JVM2JSON_PATH}")
-
+        try :
+            result = subprocess.run([JVM2JSON_PATH, "-h"], capture_output=True)
+            if result.returncode == 0:
+                return JVM2JSON_PATH
+        except Exception:
+            raise Exception(f"jvm2json not found on $PATH or {JVM2JSON_PATH}")
 
 class Manager:
     path_data = os.path.join(os.getcwd(), "analyzer", "data")
@@ -142,20 +142,6 @@ class Manager:
                 # print("Different mod time: ", src, ", was :", files_mod_time[src], ", got: ", mod_time)
                 mod_files.append(src)
         return mod_files
-    
-    @staticmethod
-    def getDiff(origin, name) :
-        old = os.path.join(os.getcwd(), "analyzer", "data", data_old_src, name)
-        f_origin = open(origin)
-        f_old = open(old)
-
-        cur_cont = f_origin.readlines()
-        old_cont = f_old.readlines()
-
-        diff = difflib.unified_diff(cur_cont, old_cont, fromfile=origin, tofile=old)
-
-        for line in diff:
-            print(line)
 
     @staticmethod
     def generateByteCodeForAll(dest) :

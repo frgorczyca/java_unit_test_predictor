@@ -1,5 +1,5 @@
 from os import PathLike
-
+import os
 from tree_sitter import Language, Parser
 from tree_sitter.binding import Tree, Node
 from typing import List, Optional, Tuple
@@ -7,8 +7,9 @@ from dataclasses import dataclass
 
 
 def get_java_language():
-    java_language = Language("analyzer/tree-sitter/libtree-sitter-java.so", "java")
-    return java_language
+    lib_path = os.path.join(os.getcwd(), "tree-sitter", "libtree-sitter-java.so")
+    JAVA_LANGUAGE = Language(lib_path, 'java')
+    return JAVA_LANGUAGE
 
 
 def find_first_named(node: Node, name: str) -> Optional[Node]:
@@ -167,6 +168,7 @@ def parse_tree(tree: Tree) -> Tuple[List[Bounds], List[Bounds]]:
 def load_tree_from_file(file_path: PathLike) -> Tree:
     parser = Parser()
     parser.set_language(get_java_language())
+    print(file_path)
     handle = open(file_path).read()
     tree = parser.parse(bytes(handle, "utf8"))
     return tree
