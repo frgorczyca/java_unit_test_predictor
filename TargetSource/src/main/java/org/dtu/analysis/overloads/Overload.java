@@ -25,6 +25,10 @@ public class Overload<T> {
 
     }
 
+    public void overloadMethod(int[] a) {
+
+    }
+
     // legal
     public void overloadMethod(Integer a) {
 

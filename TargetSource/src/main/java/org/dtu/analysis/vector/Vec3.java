@@ -23,7 +23,7 @@ public class Vec3 {
         return new Vec3(this.x + rhs.x, this.y + rhs.y, this.z + rhs.z);
     }
 
-    public Vec3 add(double rhs) {
+    public Vec3 add_c(double rhs) {
         return new Vec3(this.x + rhs, this.y + rhs, this.z + rhs);
     }
 
@@ -31,7 +31,7 @@ public class Vec3 {
         return new Vec3(this.x - rhs.x, this.y - rhs.y, this.z - rhs.z);
     }
 
-    public Vec3 sub(double rhs) {
+    public Vec3 sub_c(double rhs) {
         return new Vec3(this.x - rhs, this.y - rhs, this.z - rhs);
     }
 
@@ -39,7 +39,7 @@ public class Vec3 {
         return new Vec3(this.x * rhs.x, this.y * rhs.y, this.z * rhs.z);
     }
 
-    public Vec3 mul(double rhs) {
+    public Vec3 mul_c(double rhs) {
         return new Vec3(this.x * rhs, this.y * rhs, this.z * rhs);
     }
 
@@ -47,7 +47,7 @@ public class Vec3 {
         return new Vec3(this.x / rhs.x, this.y / rhs.y, this.z / rhs.z);
     }
 
-    public Vec3 div(double rhs) {
+    public Vec3 div_c(double rhs) {
         return new Vec3(this.x / rhs, this.y / rhs, this.z / rhs);
     }
 

@@ -12,8 +12,10 @@ class SceneTest {
     void calculateWorldTransform() {
         Scene scene = Scene.createScene2();
         scene.calculateWorldTransform();
-        for (Scene.WorldObject item : scene) {
-            item.transform.transpose().matmul(item.transform).matmul(item.transformWorld).transpose();
+        for (int i = 0; i < 10; i++) {
+            for (Scene.WorldObject item : scene) {
+                item.transform.transpose().matmul(item.transform).matmul(item.transformWorld).transpose();
+            }
         }
     }
 

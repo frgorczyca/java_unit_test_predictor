@@ -78,15 +78,15 @@ public class Mat3x3 {
                 new Vec3(0, 0, 1));
     }
 
-    public Mat3x3 add(double rhs) {
+    public Mat3x3 add_c(double rhs) {
         return new Mat3x3(
-                this.r1.add(rhs),
-                this.r2.add(rhs),
-                this.r3.add(rhs)
+                this.r1.add_c(rhs),
+                this.r2.add_c(rhs),
+                this.r3.add_c(rhs)
         );
     }
 
-    public Mat3x3 add(Mat3x3 rhs) {
+    public Mat3x3 add_mat(Mat3x3 rhs) {
         return new Mat3x3(
                 this.r1.add(rhs.r1),
                 this.r2.add(rhs.r2),
@@ -94,15 +94,15 @@ public class Mat3x3 {
         );
     }
 
-    public Mat3x3 sub(double rhs) {
+    public Mat3x3 sub_c(double rhs) {
         return new Mat3x3(
-                this.r1.sub(rhs),
-                this.r2.sub(rhs),
-                this.r3.sub(rhs)
+                this.r1.sub_c(rhs),
+                this.r2.sub_c(rhs),
+                this.r3.sub_c(rhs)
         );
     }
 
-    public Mat3x3 sub(Mat3x3 rhs) {
+    public Mat3x3 sub_mat(Mat3x3 rhs) {
         return new Mat3x3(
                 this.r1.sub(rhs.r1),
                 this.r2.sub(rhs.r2),
@@ -110,18 +110,18 @@ public class Mat3x3 {
         );
     }
 
-    public Mat3x3 mul(double rhs) {
+    public Mat3x3 mul_c(double rhs) {
         return new Mat3x3(
-                this.r1.mul(rhs),
-                this.r2.mul(rhs),
-                this.r3.mul(rhs)
+                this.r1.mul_c(rhs),
+                this.r2.mul_c(rhs),
+                this.r3.mul_c(rhs)
         );
     }
 
     /**
      * Elementwise multiply
      */
-    public Mat3x3 mul(Mat3x3 rhs) {
+    public Mat3x3 mul_mat(Mat3x3 rhs) {
         return new Mat3x3(
                 this.r1.mul(rhs.r1),
                 this.r2.mul(rhs.r2),
@@ -129,18 +129,18 @@ public class Mat3x3 {
         );
     }
 
-    public Mat3x3 div(double rhs) {
+    public Mat3x3 div_c(double rhs) {
         return new Mat3x3(
-                this.r1.div(rhs),
-                this.r2.div(rhs),
-                this.r3.div(rhs)
+                this.r1.div_c(rhs),
+                this.r2.div_c(rhs),
+                this.r3.div_c(rhs)
         );
     }
 
     /**
      * Elementwise multiply
      */
-    public Mat3x3 div(Mat3x3 rhs) {
+    public Mat3x3 div_mat(Mat3x3 rhs) {
         return new Mat3x3(
                 this.r1.div(rhs.r1),
                 this.r2.div(rhs.r2),
@@ -162,7 +162,7 @@ public class Mat3x3 {
         );
     }
 
-    public Vec3 matmul(Vec3 rhs) {
+    public Vec3 matmul_vec(Vec3 rhs) {
         return new Vec3(
                 r1.dot(rhs),
                 r2.dot(rhs),
