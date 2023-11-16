@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools >= 62.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "java-test-analyzer"
+version = "0.1.0"
+authors = [
+    { name="Cem Akarsubasi", email="cemakarsubasi@gmail.com" },
+    { name="Franciszek Gorczyca", email="fr.gorczyca@gmail.com" },
+    { name="Maks Cebula", email="uselessmail11111@gmail.com" },
+    { name="Oliver Stenberg Jakobsen", email="oliver@stenberg-jakobsen.dk" },
+]
+description = "For DTU 02242 Program Analysis Class"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+exclude = ["data/*"]
+namespaces = true
+
+
+[project.urls]
+"Homepage" = "https://github.com/frgorczyca/program_analysis_project_2023"
+"Bug Tracker" = "https://github.com/frgorczyca/program_analysis_project_2023/issues"
