@@ -1,10 +1,8 @@
-import pytest
 import csv
-import os
 from typing import Tuple, List
 from glob import glob
 from pathlib import Path
-from analyzer.dependency_graphs.dependency_graphs import parse_program
+from analyzer.dependency_graphs import parse_program
 
 
 def get_file_list() -> Tuple[List[str], List[str]]:

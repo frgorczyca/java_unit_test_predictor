@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 
-from analyzer.dependency_graphs.bounds import load_tree_from_file, parse_tree, Bounds
+from analyzer.bounds import load_tree_from_file, parse_tree, Bounds
 
 """
 Semantic static analyzer
@@ -276,7 +276,7 @@ def get_file_text(file) -> str:
 
 def main():
     from pathlib import Path
-    from analyzer.dependency_graphs.bounds import print_tree
+    from analyzer.bounds import print_tree
     path = Path("analyzer/data/bytecode/old/Scene.json")
     source_path = Path("TargetSource/src/main/java/org/dtu/analysis/overloads/Overload.java")
 
