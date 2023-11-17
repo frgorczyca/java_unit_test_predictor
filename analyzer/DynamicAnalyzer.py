@@ -178,7 +178,7 @@ def perform_compare(runner: Interpreter, opr: Operation, element: StackElement):
     second = element.operational_stack.pop().value
     first = element.operational_stack.pop().value
     if getattr(first, get_comparison(opr.condition))(second):
-        next_counter = Counter(element.counter.method_name, opr.target)
+        next_counter = Counter(element.counter.class_name, element.counter.method_name, opr.target)
         runner.stack.append(StackElement(element.local_variables, element.operational_stack, next_counter))
     else:
         runner.stack.append(StackElement(element.local_variables, element.operational_stack, element.counter.next_counter()))
@@ -325,6 +325,23 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
             args.append(Value(arg, type_name))
     return args, _memory
 
+def get_traces(old_path: str, test_path: str):
+    with open(old_path, "r") as fp:
+        original_file = json.load(fp)
+        original_class = JavaClass(json_dict=original_file)
+    with open(test_path, "r") as fp:
+        test_file = json.load(fp)
+        test_class = JavaClass(json_dict=test_file)
+
+    traces: Dict[str, Set[TraceStep]] = {}
+    tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
+    for test in tests:
+        test_name = test["name"]
+        interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
+        interpreter.run()
+        traces[test_name] = interpreter.trace
+    return traces
+
 def sequence_compare(original_class: JavaClass, modications: Set[str], test_class: JavaClass, tests):
     traces: Dict[str, Set[TraceStep]] = {}
     for test in tests:
@@ -333,13 +350,15 @@ def sequence_compare(original_class: JavaClass, modications: Set[str], test_clas
         interpreter.run()
         traces[test_name] = interpreter.trace
 
-    tests_to_run = set()
+    tests_to_run: Dict[str, Set[str]] = {}
     for test_name, trace in traces.items():
         for step in trace:
             fully_qualified_name = f"{step.class_name}.{step.method_name}"
             if fully_qualified_name in modications:
-                tests_to_run.add(test_name)
-    return sorted(tests_to_run)
+                if test_class.name not in tests_to_run:
+                    tests_to_run[test_class.name] = set()
+                tests_to_run[test_class.name].add(test_name)
+    return tests_to_run
 
 def get_tests(old, modifications, tests):
     with open(old, "r") as fp:
