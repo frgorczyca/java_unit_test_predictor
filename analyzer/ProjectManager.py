@@ -32,6 +32,7 @@ class Manager:
     bytecode_path = os.path.join(path_data, "bytecode")
     bytecode_old = os.path.join(bytecode_path, "old")
     bytecode_curr = os.path.join(bytecode_path, "curr")
+    bytecode_tests = os.path.join(bytecode_path, "tests")
 
     # Change to False if you dont want to run jvm2json automatically
     use_jvm2json = True
@@ -154,11 +155,16 @@ class Manager:
         # subprocess.run([jvm2json_path, "-h"])
     
     @staticmethod
-    def generateByteCode(name, dest) :
+    def generateByteCode(name, dest, dest_tests = "") :
         files = Manager.findFile(".", name, ".class")
         for file in files :
             if ("Test" in file or "test" in file or "TEST" in file) :
-                continue
+                if dest_tests == "":
+                    continue
+
+                f_name = os.path.basename(file).split(".")[0] + ".json"
+                path = os.path.join(dest_tests, f_name)
+                subprocess.run([Manager.jvm2json_path, "-s", file, "-t", path])
             else :
                 f_name = os.path.basename(file).split(".")[0] + ".json"
                 path = os.path.join(dest, f_name)

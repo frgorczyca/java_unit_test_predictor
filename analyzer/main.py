@@ -55,7 +55,10 @@ if __name__ == "__main__":
                 print("")
             
             if (use_syntax) :
-                print("Doing plain syntax analyzis...")
+                print("Find modified methods using syntax analysis")
+
+                if (Manager.use_jvm2json) :
+                    Manager.generateByteCode(name, Manager.bytecode_curr, Manager.bytecode_tests)      
 
                 old_path = os.path.join(Manager.bytecode_old, name + ".json")
                 olds = [old_path]
