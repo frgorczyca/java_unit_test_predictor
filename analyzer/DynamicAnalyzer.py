@@ -151,7 +151,8 @@ def get_binary(opr: Operation):
     operations = {
         "add": "__add__",
         "sub": "__sub__",
-        "mul": "__mul__"
+        "mul": "__mul__",
+        "rem": "__mod__",
     }
     return operations[opr.operant]
 
