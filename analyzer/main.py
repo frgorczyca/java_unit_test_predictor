@@ -3,9 +3,11 @@ from ByteCode import *
 from SyntaxAnalyzer import *
 from dependency_graphs import *
 from dependency_graphs import parse_program
+from DynamicAnalyzer import get_tests
 
-use_bytecode = 1
+use_bytecode = 0
 use_syntax = 1
+use_dynamic = 1
 
 if __name__ == "__main__":
 
@@ -25,11 +27,12 @@ if __name__ == "__main__":
     if (initialized) :
         print("Starting analyzers...")
         mod_files = Manager.findModifiedFiles()
-        modifications = []
-        for file in mod_files :
+        modifications = set()
+        for file in ['./TargetSource/src/main/java/org/dtu/analysis/relations/Chosen.java'] :
             name = os.path.basename(file)
             name = name.split(".")[0]
 
+            print()
             if (use_bytecode) :
                 print("Doing bytecode analyzis...")
                 if (Manager.use_jvm2json) :
@@ -69,19 +72,32 @@ if __name__ == "__main__":
                 dict = Syntax.ParseTests(test_files)
                 Manager.saveTestsDep(dict, Manager.path_data)
                 diff, old_cont = Syntax.getDiff(file, name)
+                # a = list(diff)
 
                 ranges = Syntax.analyzeDiff(diff, old_cont)
 
+                result = set()
                 for rg in ranges :
                     for key in program.classes:
                         if rg >= program.classes[key].start_point[0] and rg <=  program.classes[key].end_point[0] :
                             for method in program.classes[key].methods :
                                 if rg <= program.methods[method].end_point[0] and rg >= program.methods[method].start_point[0] :
-                                    modifications.append(program.methods[method].name)
-                
-            print(modifications)
-            # Example output
-            # ['org/dtu/analysis/arrays/NaiveArrays.sum_elements',
-            #  'org/dtu/analysis/arrays/NaiveArrays.sum_elements',
-            #  'org/dtu/analysis/arrays/SortingArrays.find_max',
-            #  'org/dtu/analysis/arrays/SortingArrays.find_max']
+                                    result.add(program.methods[method].name)
+                for r in result:
+                    modifications.add(r)
+
+                print(result)
+            
+            if use_dynamic:
+                print("Identify tests to re-run based on modifications")
+                old_path = os.path.join(Manager.bytecode_old, name + ".json")
+                test_path = os.path.join(Manager.bytecode_tests, name + "Tests.json")
+                tests_to_rerun = get_tests(old_path, modifications, test_path)
+                print(tests_to_rerun)
+
+        
+        # Example output
+        # ['org/dtu/analysis/arrays/NaiveArrays.sum_elements',
+        #  'org/dtu/analysis/arrays/NaiveArrays.sum_elements',
+        #  'org/dtu/analysis/arrays/SortingArrays.find_max',
+        #  'org/dtu/analysis/arrays/SortingArrays.find_max']
