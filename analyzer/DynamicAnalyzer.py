@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Set
 from dataclasses import dataclass
 from pydoc import locate
 import uuid
@@ -59,13 +59,20 @@ class Counter:
         return f"{self.method_name} in {self.class_name} at {self.counter}"
 
 class TraceStep:
-    def __init__(self, counter: Counter, left_value, right_value):
-        self.counter: Counter = counter
-        self.left_value = left_value
-        self.right_value = right_value
+    def __init__(self, class_name, method_name):
+        self.class_name = class_name
+        self.method_name = method_name
 
+    def __eq__(self, other):
+        if not isinstance(other, TraceStep):
+            return False
+        return self.class_name == other.class_name and self.method_name == other.method_name
+
+    def __hash__(self):
+        return hash((self.class_name, self.method_name))
+    
     def __repr__(self):
-        return f"{self.counter.method_name} in {self.counter.class_name} at {self.counter.counter}"
+        return f"{self.method_name} in {self.class_name}"
 
 class StackElement:
     def __init__(self, local_variables: List[Value], operational_stack, counter: Counter):
@@ -83,6 +90,8 @@ class Operation:
         self.value: Value = Value(json_doc["value"]["value"], json_doc["value"]["type"]) if "value" in json_doc else None
         self.condition: str = json_doc["condition"] if "condition" in json_doc else None
         self.target: int = json_doc["target"] if "target" in json_doc else None
+        self.targets: List[int] = json_doc["targets"] if "targets" in json_doc else None
+        self.default: int = json_doc["default"] if "default" in json_doc else None
         self.amount: int = json_doc["amount"] if "amount" in json_doc else None
         self.class_: str = json_doc["class"] if "class" in json_doc else None
         self.method: Dict[str, Any] = json_doc["method"] if "method" in json_doc else None
@@ -92,13 +101,11 @@ class Interpreter:
         self.memory: Dict[str, Value] = memory
         self.stack: List[StackElement] = [StackElement(method_args, [], Counter(java_class, method_name, 0))]
         self.java_classes = java_classes
-        self.trace: List[TraceStep] = []
+        self.trace: Set[TraceStep] = set()
 
     def get_class(self, class_name, method_name) -> JavaClass:
         if class_name in self.java_classes.keys():
             return self.java_classes[class_name]
-        elif class_name == "java/io/PrintStream" and method_name == "println":
-            return JavaClass(json.loads('{"name": "Mock", "methods" :[{"name":"' + method_name + '", "code": { "bytecode": [ { "offset": 0, "opr": "load", "type": "str", "index": 0 }, { "offset": 1, "opr": "print" }, { "offset": 2, "opr": "return", "type": null } ] } } ] }'))
         else:
             return JavaClass(json.loads('{"name": "Mock", "methods" :[{"name":"' + method_name + '", "code": { "bytecode": [ { "offset": 0, "opr": "push", "value": { "type": "integer", "value": 4 } }, { "offset": 1, "opr": "return", "type": "int" } ] } } ] }'))
 
@@ -107,7 +114,7 @@ class Interpreter:
             element = self.stack.pop()
             java_class = self.get_class(element.counter.class_name, element.counter.method_name)
             operation = get_operation(java_class, element.counter)
-            self.add_trace_step(element, operation)
+            self.add_trace_step(element)
             if operation.opr == "return":
                 return perform_return(self, operation, element)
             self.run_operation(operation, element)
@@ -116,15 +123,10 @@ class Interpreter:
         method = method_mapper[operation.opr]
         method(self, operation, element)
     
-    def add_trace_step(self, element: StackElement, operation: Operation):
+    def add_trace_step(self, element: StackElement):
         if "Test" in element.counter.class_name or "junit" in element.counter.class_name:
             return
-        if operation.opr == "ifz":
-            self.trace.append(TraceStep(element.counter, element.operational_stack[-1].value, 0))
-        elif operation.opr == "if":
-            self.trace.append(TraceStep(element.counter, element.operational_stack[-2].value, element.counter, element.operational_stack[-1]))
-        else:
-            self.trace.append(TraceStep(element.counter, None, None))
+        self.trace.add(TraceStep(element.counter.class_name, element.counter.method_name))
 
 def get_operation(java_class: JavaClass, counter: Counter):
     return Operation(java_class.get_method(counter.method_name)["code"]["bytecode"][counter.counter])
@@ -205,8 +207,16 @@ def perform_increment(runner: Interpreter, opr: Operation, element: StackElement
     runner.stack.append(StackElement(local_vars, element.operational_stack, element.counter.next_counter()))
 
 def perform_goto(runner: Interpreter, opr: Operation, element: StackElement):
-    next_counter = Counter(element.counter.method_name, opr.target)
+    next_counter = Counter(element.counter.class_name, element.counter.method_name, opr.target)
     runner.stack.append(StackElement(element.local_variables, element.operational_stack, next_counter))
+
+def perform_tableswitch(runner: Interpreter, opr: Operation, element: StackElement):
+    value = element.operational_stack.pop()
+    if value.value > -1 and value.value < len(opr.targets):
+        next_counter = Counter(element.counter.class_name, element.counter.method_name, opr.targets[value.value])
+    else:
+        next_counter = Counter(element.counter.class_name, element.counter.method_name, opr.default)
+    runner.stack.append(StackElement(element.local_variables, element.operational_stack, next_counter))    
 
 def perform_new_array(runner: Interpreter, opr: Operation, element: StackElement):
     size = element.operational_stack.pop().value
@@ -262,7 +272,7 @@ def perform_invoke(runner: Interpreter, opr: Operation, element: StackElement):
     _args, _memory = get_args_and_memory(args, runner.memory)
     interpreter = Interpreter(runner.java_classes, class_name, method_name, _args, _memory)
     result = interpreter.run()
-    runner.trace.extend(interpreter.trace)
+    runner.trace = runner.trace.union(interpreter.trace)
     if opr.method["returns"] is not None:
         runner.stack.append(StackElement(element.local_variables, element.operational_stack + [Value(result)], element.counter.next_counter()))
     else:
@@ -288,6 +298,7 @@ method_mapper = {
     "ifz": perform_compare_zero,
     "incr": perform_increment,
     "goto": perform_goto,
+    "tableswitch": perform_tableswitch,
     "newarray": perform_new_array,
     "array_store": perform_array_store,
     "array_load": perform_array_load,
@@ -313,66 +324,32 @@ def get_args_and_memory(method_args: List[Value], memory: Dict):
             args.append(Value(arg, type_name))
     return args, _memory
 
-def create_method_dict(java_class: JavaClass):
-    methods_without_offset = {}
-    for method in java_class.get_methods():
-        for line in method["code"]["bytecode"]:
-            line["offset"] = "ignore"
-        methods_without_offset[method["name"]] = method
-    return methods_without_offset
-
-def sequence_compare(original_class: JavaClass, change_class: JavaClass, test_class: JavaClass, tests):
-    traces: Dict[str, List[TraceStep]] = {}
+def sequence_compare(original_class: JavaClass, modications: Set[str], test_class: JavaClass, tests):
+    traces: Dict[str, Set[TraceStep]] = {}
     for test in tests:
         test_name = test["name"]
         interpreter = Interpreter({original_class.name: original_class, test_class.name: test_class}, test_class.name, test_name, [], {})
         interpreter.run()
         traces[test_name] = interpreter.trace
 
-    original_methods = create_method_dict(original_class)
-    changed_methods = create_method_dict(change_class)
     tests_to_run = set()
     for test_name, trace in traces.items():
-        original_idx = 0
-        changed_idx = 0
-        method_name = trace[original_idx].counter.method_name
-        while original_idx < len(trace):
-            original_step = original_methods[method_name]["code"]["bytecode"][trace[original_idx].counter.counter]
-            changed_step = changed_methods[method_name]["code"]["bytecode"][changed_idx]
-            if original_step["opr"] == "goto":
-                original_idx += 1
-                continue
-            if changed_step["opr"] == "goto":
-                changed_idx = changed_step["target"]
-                continue
-            if original_step["opr"] in ["if", "ifz"] and changed_step["opr"] in ["if", "ifz"]:
-                changed_eval = getattr(trace[original_idx].left_value, get_comparison(changed_step["condition"]))(trace[original_idx].right_value) 
-                if changed_eval:
-                    changed_idx = changed_step["target"]
-                else:
-                    changed_idx += 1
-                original_idx += 1
-            elif original_step != changed_step:
+        for step in trace:
+            fully_qualified_name = f"{step.class_name}.{step.method_name}"
+            if fully_qualified_name in modications:
                 tests_to_run.add(test_name)
-                break
-            else:
-                original_idx += 1
-                changed_idx += 1
     return sorted(tests_to_run)
 
-def get_tests(old, new, tests):
+def get_tests(old, modifications, tests):
     with open(old, "r") as fp:
         original_file = json.load(fp)
         original_class = JavaClass(json_dict=original_file)
-    with open(new, "r") as fp:
-        change_file = json.load(fp)
-        change_class = JavaClass(json_dict=change_file)
     with open(tests, "r") as fp:
         test_file = json.load(fp)
         test_class = JavaClass(json_dict=test_file)
 
     tests = list(filter(lambda x: len(x["annotations"]) > 0 and x["annotations"][0]["type"] == "org/junit/jupiter/api/Test", test_class.get_methods()))
-    return sequence_compare(original_class, change_class, test_class, tests)
+    return sequence_compare(original_class, modifications, test_class, tests)
 
 if __name__ == "__main__":
     print(get_tests(
