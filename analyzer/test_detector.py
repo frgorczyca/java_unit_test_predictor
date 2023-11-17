@@ -1,3 +1,6 @@
+import glob
+import json
+
 from .ProjectManager import *
 from .ByteCode import *
 from .SyntaxAnalyzer import *
@@ -12,6 +15,19 @@ class TestDetector:
 
     def get_traces(self, class_path, test_path):
         self.traces = DynamicAnalyzer.get_traces(class_path, test_path)
+
+    def store_traces(self):
+        for trace in self.traces:
+            with open(f"evaluation_traces/{trace}.json", "w+") as f:
+                json_data = { "data": { "test_name": trace, "trace": [{"class_name": value.class_name, "method_name": value.method_name} for value in self.traces[trace]] }}
+                json.dump(json_data, fp=f)
+    
+    def load_traces(self):
+        trace_files = glob.glob("evaluation_traces/*")
+        for trace_file in trace_files:
+            with open(trace_file, "r") as f:
+                json_data = json.load(f)["data"]
+                self.traces[json_data["test_name"]] = set(DynamicAnalyzer.TraceStep(x["class_name"], x["method_name"]) for x in json_data["trace"])
 
     def get_modifications(self, class_paths):
         modifications = set()

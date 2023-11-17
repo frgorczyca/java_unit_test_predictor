@@ -23,7 +23,12 @@ test_path_compiled = os.path.join(Manager.bytecode_tests, class_name + "Tests.js
 analyzer = TestDetector()
 
 trace_start = datetime.now()
-analyzer.get_traces(old_path_compiled, test_path_compiled)
+get_new_traces = False
+if get_new_traces:
+    analyzer.get_traces(old_path_compiled, test_path_compiled)
+    analyzer.store_traces()
+else:
+    analyzer.load_traces()
 trace_time = datetime.now() - trace_start
 
 modifications_start = datetime.now()

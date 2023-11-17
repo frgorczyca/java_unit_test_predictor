@@ -73,6 +73,9 @@ class TraceStep:
     
     def __repr__(self):
         return f"{self.method_name} in {self.class_name}"
+    
+    def to_json(self):
+        return "{ 'class_name':'" + self.class_name + "', 'method_name':'" + self.method_name + "'}"
 
 class StackElement:
     def __init__(self, local_variables: List[Value], operational_stack, counter: Counter):
