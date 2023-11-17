@@ -1,0 +1,19 @@
+{
+    "data": {
+        "test_name": "SumBD_Test",
+        "trace": [
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetB"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetD"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "SumBD"
+            }
+        ]
+    }
+}

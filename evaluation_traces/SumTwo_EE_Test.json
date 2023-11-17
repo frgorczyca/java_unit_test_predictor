@@ -1,0 +1,19 @@
+{
+    "data": {
+        "test_name": "SumTwo_EE_Test",
+        "trace": [
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "SumTwo"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetE"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetValue"
+            }
+        ]
+    }
+}

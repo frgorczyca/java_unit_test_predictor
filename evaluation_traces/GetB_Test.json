@@ -1,0 +1,11 @@
+{
+    "data": {
+        "test_name": "GetB_Test",
+        "trace": [
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetB"
+            }
+        ]
+    }
+}
