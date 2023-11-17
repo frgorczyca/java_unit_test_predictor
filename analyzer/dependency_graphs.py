@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 
-from analyzer.bounds import load_tree_from_file, parse_tree, Bounds
+from bounds import load_tree_from_file, parse_tree, Bounds
 
 """
 Semantic static analyzer
@@ -285,7 +285,7 @@ def main():
     # print(parse_tree(tree)[1])
 
 
-from analyzer.interface import JavaTestAnalyzer
+from interface import JavaTestAnalyzer
 
 class DepGraphAnalyzer(JavaTestAnalyzer):
     pass
