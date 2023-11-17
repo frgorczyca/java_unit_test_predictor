@@ -10,7 +10,13 @@ public class Chosen {
     }
 
     public static int GetC() {
-        return 3;
+        int p = 0;
+        for (int i = 0; i < 100000; i++) {
+            for(int j = 0; j < 100000; j++ ) {
+                p += j % 4;
+            }
+        }
+        return p;
     }
 
     public static int GetD() {
