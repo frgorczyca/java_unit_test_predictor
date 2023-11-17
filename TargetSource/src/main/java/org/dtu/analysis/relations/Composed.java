@@ -14,6 +14,6 @@ public class Composed {
     }
 
     public String GetLabel(){
-        return BaseMapping.L1.label;
+        return "L1";
     }
 }

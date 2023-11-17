@@ -7,6 +7,6 @@ public class Overrider extends Composed {
 
     @Override
     public String GetLabel() {
-        return BaseMapping.L3.label;
+        return "L3";
     }
 }

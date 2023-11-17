@@ -53,7 +53,7 @@ public class RelationsTests {
         Offspring o = new Offspring(1);
         Composed c = new Composed(b, o);
 
-        assertEquals(c.GetLabel(), BaseMapping.L1.label);
+        assertEquals(c.GetLabel(), "L1");
     }
 
     @Test
@@ -63,7 +63,7 @@ public class RelationsTests {
 
         Overrider ov = new Overrider(b, o);
 
-        assertEquals(ov.GetLabel(), BaseMapping.L3.label);
+        assertEquals(ov.GetLabel(), "L3");
     }
 
     @Test
@@ -111,7 +111,7 @@ public class RelationsTests {
         Invoker inv = new Invoker();
         inv.InvokeComposed(c);
         assertEquals(inv.number, basicId+offspringId+offset);
-        assertEquals(inv.label, BaseMapping.L1.label);
+        assertEquals(inv.label, "L1");
     }
 
     @Test
@@ -133,7 +133,7 @@ public class RelationsTests {
         Invoker inv = new Invoker();
         inv.InvokeOverrider(ov);
         assertEquals(inv.number, basicId+offspringId+offset);
-        assertEquals(inv.label, BaseMapping.L3.label);
+        assertEquals(inv.label, "L3");
     }
 
 }
