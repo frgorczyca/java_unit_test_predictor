@@ -136,11 +136,7 @@ class Manager:
         for src in res_src:
             if "test" in src or "TEST" in src or "Test" in src:
                 continue
-
-            mod_time = os.path.getmtime(src)
-            if float(files_mod_time[src]) != mod_time :
-                # print("Different mod time: ", src, ", was :", files_mod_time[src], ", got: ", mod_time)
-                mod_files.append(src)
+            mod_files.append(src)
         return mod_files
 
     @staticmethod
