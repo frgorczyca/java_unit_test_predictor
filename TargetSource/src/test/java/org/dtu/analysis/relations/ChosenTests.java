@@ -58,22 +58,22 @@ public class ChosenTests {
 
     @Test
     void SumTwo_AB_Test() {
-        assertEquals(10, Chosen.SumTwo(0, 1));
+        assertEquals(3, Chosen.SumTwo(0, 1));
     }
 
     @Test
     void SumTwo_AC_Test() {
-        assertEquals(10, Chosen.SumTwo(0, 2));
+        assertEquals(4, Chosen.SumTwo(0, 2));
     }
 
     @Test
     void SumTwo_BD_Test() {
-        assertEquals(10, Chosen.SumTwo(1, 3));
+        assertEquals(6, Chosen.SumTwo(1, 3));
     }
 
     @Test
     void SumTwo_DE_Test() {
-        assertEquals(10, Chosen.SumTwo(3, 4));
+        assertEquals(9, Chosen.SumTwo(3, 4));
     }
 
     @Test
