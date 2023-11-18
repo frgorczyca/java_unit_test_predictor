@@ -8,8 +8,8 @@ from dataclasses import dataclass
 
 def get_java_language():
     lib_path = os.path.join(os.getcwd(), "tree-sitter", "libtree-sitter-java.so")
-    JAVA_LANGUAGE = Language(lib_path, 'java')
-    return JAVA_LANGUAGE
+    java_language = Language(lib_path, 'java')
+    return java_language
 
 
 def find_first_named(node: Node, name: str) -> Optional[Node]:
@@ -92,6 +92,7 @@ def find_parameters(node: Node) -> List[str]:
 @dataclass(frozen=True)
 class Bounds:
     name: str  # fully qualified name
+    node: Node
     start_point: (int, int)
     end_point: (int, int)
 
@@ -100,7 +101,7 @@ class Bounds:
         name = f"{name_qualifier}{sep}{find_identifier_name(node)}"
         start_point = node.start_point
         end_point = node.end_point
-        return Bounds(name, start_point, end_point)
+        return Bounds(name, node, start_point, end_point)
 
     @staticmethod
     def from_method(node: Node, name_qualifier="", sep=".") -> 'Bounds':
@@ -108,7 +109,7 @@ class Bounds:
         name = ".".join([f"{name_qualifier}{sep}{find_identifier_name(node)}"])  # , '.'.join(params)])
         start_point = node.start_point
         end_point = node.end_point
-        return Bounds(name, start_point, end_point)
+        return Bounds(name, node, start_point, end_point)
 
     @staticmethod
     def from_constructor(node: Node, name_qualifier="", sep=".") -> 'Bounds':
@@ -116,14 +117,14 @@ class Bounds:
         name = ".".join([f"{name_qualifier}{sep}<init>"])  # , '.'.join(params)])
         start_point = node.start_point
         end_point = node.end_point
-        return Bounds(name, start_point, end_point)
+        return Bounds(name, node, start_point, end_point)
 
     @staticmethod
     def from_given_name(name_qualifier="", name="", sep="."):
         name = f"{name_qualifier}{sep}{name}"
         start_point = (-1, -1)
         end_point = (-1, -1)
-        return Bounds(name, start_point, end_point)
+        return Bounds(name, None, start_point, end_point)
 
 
 def parse_tree(tree: Tree) -> Tuple[List[Bounds], List[Bounds]]:
