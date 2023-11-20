@@ -27,6 +27,18 @@ public class Chosen {
         return 5;
     }
 
+    public static int IfElse(boolean get) {
+        if (get) {
+            return GetA();
+        } else {
+            return GetB();
+        }
+    }
+
+    public static int NestedCall() {
+        return SumTwo(0, 1) + GetE();
+    }
+
     public static int SumAB() {
         return GetA() + GetB();
     }
