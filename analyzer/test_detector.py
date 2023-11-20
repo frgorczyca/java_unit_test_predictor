@@ -56,8 +56,8 @@ class TestDetector:
                 for key in program.classes:
                     if rg >= program.classes[key].start_point[0] and rg <=  program.classes[key].end_point[0] :
                         for method in program.classes[key].methods :
-                            if rg <= program.methods[method].end_point[0] and rg >= program.methods[method].start_point[0] :
-                                result.add(program.methods[method].name)
+                            if rg <= program.methods[method.name].end_point[0] and rg >= program.methods[method.name].start_point[0] :
+                                result.add(program.methods[method.name].name)
             for r in result:
                 modifications.add(r)
         self.modications = modifications
