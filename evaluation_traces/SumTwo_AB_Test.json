@@ -4,19 +4,19 @@
         "trace": [
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "SumTwo"
-            },
-            {
-                "class_name": "org/dtu/analysis/relations/Chosen",
                 "method_name": "GetA"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetValue"
+                "method_name": "GetB"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetB"
+                "method_name": "SumTwo"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetValue"
             }
         ]
     }

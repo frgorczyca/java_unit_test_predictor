@@ -1,14 +1,14 @@
 {
     "data": {
-        "test_name": "SumEE_Test",
+        "test_name": "IfElse_True_Test",
         "trace": [
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetE"
+                "method_name": "GetA"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "SumEE"
+                "method_name": "IfElse"
             }
         ]
     }

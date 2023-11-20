@@ -4,15 +4,15 @@
         "trace": [
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "SumBD"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
                 "method_name": "GetB"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
                 "method_name": "GetD"
-            },
-            {
-                "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "SumBD"
             }
         ]
     }

@@ -1,18 +1,18 @@
 {
     "data": {
-        "test_name": "SumAB_Test",
+        "test_name": "SumTwo_CC_Test",
         "trace": [
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetB"
+                "method_name": "SumTwo"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "SumAB"
+                "method_name": "GetValue"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetA"
+                "method_name": "GetC"
             }
         ]
     }

@@ -1,14 +1,10 @@
 {
     "data": {
-        "test_name": "SumTwo_DE_Test",
+        "test_name": "NestedCalls_Test",
         "trace": [
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetValue"
-            },
-            {
-                "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetE"
+                "method_name": "NestedCall"
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
@@ -16,7 +12,19 @@
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetD"
+                "method_name": "GetValue"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetA"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetB"
+            },
+            {
+                "class_name": "org/dtu/analysis/relations/Chosen",
+                "method_name": "GetE"
             }
         ]
     }

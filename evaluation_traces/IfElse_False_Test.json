@@ -1,6 +1,6 @@
 {
     "data": {
-        "test_name": "SumAB_Test",
+        "test_name": "IfElse_False_Test",
         "trace": [
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
@@ -8,11 +8,7 @@
             },
             {
                 "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "SumAB"
-            },
-            {
-                "class_name": "org/dtu/analysis/relations/Chosen",
-                "method_name": "GetA"
+                "method_name": "IfElse"
             }
         ]
     }
