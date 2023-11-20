@@ -249,43 +249,6 @@ def parse_calls(bytecode: List[Dict[Any, Any]]) -> Generator[str, None, None]:
         print(f"parse_calls: {err}")
 
 
-def parse_params(params: List[Dict[str, Any]]) -> List[str]:
-    parameter_list = []
-    for param in params:
-        reference_dict_maybe = param.get("type")
-        if reference_dict_maybe:
-            # try base types
-            base_type_maybe = reference_dict_maybe.get("base")
-            if base_type_maybe is not None:
-                parameter_list.append(base_type_maybe)
-                continue
-            # try list types
-            list_type_maybe = reference_dict_maybe.get("kind")
-            if list_type_maybe == "array":
-                base_type_maybe = reference_dict_maybe["type"].get("base")
-                if base_type_maybe:
-                    parameter_list.append(f"{base_type_maybe}[]")
-                    continue
-                reference_type_maybe = reference_dict_maybe["type"].get("name")
-                if reference_type_maybe:
-                    parameter_list.append(f"{reference_type_maybe}[]")
-                    continue
-            # try inner types
-            inner_type_maybe = reference_dict_maybe.get("inner")
-            if inner_type_maybe:
-                inner_type = inner_type_maybe.get("name")
-                if inner_type:
-                    parameter_list.append(inner_type)
-                    continue
-            # try reference types
-            reference_type_maybe = reference_dict_maybe.get("name")
-            if reference_type_maybe:
-                parameter_list.append(reference_type_maybe)
-                continue
-        raise Exception(f"An unknown type was reached in: {params}\n{param}")
-
-    return parameter_list
-
 
 def get_file_text(file) -> str:
     """Get text from a file in the given path"""
@@ -296,6 +259,15 @@ def get_file_text(file) -> str:
         print(f"Error opening file: {err}")
         exit(-1)
     return content
+
+
+def get_changed_methods(old_program: JavaProgram, new_program: JavaProgram) -> Set[str]:
+    changed_methods = set()
+    for method_name, method in old_program.methods:
+        same_method_maybe = new_program.methods.get(method_name)
+        if same_method_maybe != method:
+            changed_methods.add(method_name)
+    return changed_methods
 
 
 class DepGraphAnalyzer(JavaTestAnalyzer):
